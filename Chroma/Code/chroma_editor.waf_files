@@ -1,0 +1,17 @@
+{
+    "auto": {
+        "Include": [
+            "Include/Chroma/RzChromaSDKDefines.h",
+            "Include/Chroma/RzChromaSDKTypes.h",
+            "Include/Chroma/RzErrors.h"
+        ],
+        "Source": [
+            "Source/ChromaSystemComponent.cpp",
+            "Source/ChromaSystemComponent.h",
+            "Source/ChromaSDKImpl.h",
+            "Source/ChromaSDKImpl.cpp",
+            "Source/FrameController.h",
+            "Source/FrameController.cpp"
+        ]
+    }
+}

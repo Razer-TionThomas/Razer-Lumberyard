@@ -1,0 +1,12 @@
+{
+    "GemFormatVersion": 3,
+    "Uuid": "a33e409ebf5c44b7b6ae0609936f5af8",
+    "Name": "Chroma",
+    "DisplayName": "Chroma",
+    "Version": "0.1.0",
+    "LinkType": "Dynamic",
+    "Summary": "Adds Razer Chroma RGB lighting features for game integration",
+    "Tags": ["Untagged"],
+    "IconPath": "preview.png",
+    "EditorModule": true
+}
