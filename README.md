@@ -1,4 +1,4 @@
-# Chroma GEM - Amazon Lumberyard plugin to control lighting for (Razer Chroma)
+# Chroma GEM for Amazon Lumberyard
 
 # Table of Contents
 
