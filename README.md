@@ -58,6 +58,7 @@ See video overview on how to use the Chroma GEM component in the Lumberyard edit
 
 
 ## Todo
+- Fix image import feature to use QFileDialog instead of CFileDialog
 - Add support for composite effect across all devices
 - Add more support for ebus events for triggering effects
 - Create deplyable sample project using scripts to communicate with Chroma GEM
