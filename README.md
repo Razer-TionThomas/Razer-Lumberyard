@@ -1,6 +1,6 @@
 # Chroma GEM for Amazon Lumberyard
 
-# Table of Contents
+## Table of Contents
 
 Related
 Frameworks supported
@@ -11,7 +11,7 @@ Usage
 .
 .
 
-# Related
+## Related
 
 CChromaEditor - C++ Native MFC Library for playing and editing Chroma animations
 
@@ -24,16 +24,16 @@ UnityNativeChromaSDK - Unity native library for the ChromaSDK
 UnityChromaSDK - Unity C# library for the Chroma Rest API
 
 
-# Frameworks supported
+## Frameworks supported
 
 Windows Chroma SDK (32-bit)
 Windows Chroma SDK (64-bit)
 
-# Engine Versions
+## Engine Versions
 
 The Chroma GEM for Amazon Lumberyard was developed and validated on version 1.9 beta. 
 
-# Prerequisites
+## Prerequisites
 - [Download latest Lumberyard Engine][lmb-download] 
 - Follow Amazon's tutorial on how to configure your system to run Lumberyard (see link below)
 - Download the Chroma GEM folder and copy it to the Lumberyard Install Path\dev\Gems folder. For example, assuming the default install path for installing Lumberyard 1.9.0.1, you will copy the Chroma Gem folder to the following path:
@@ -49,7 +49,7 @@ For information on how to get started in Lumberyard, including instructions on i
 
 
 
-# Usage
+## Usage
 See video overview on how to use the Chroma GEM component in the Lumberyard editor: Chroma Gem Video Tutorial 
 
 
