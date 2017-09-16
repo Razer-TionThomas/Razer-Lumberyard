@@ -1,4 +1,4 @@
-# Chroma GEM for Amazon Lumberyard
+# Chroma GEM for Amazon Lumberyard (WIP)
 
 ## Table of Contents
 
@@ -56,6 +56,14 @@ For information on how to get started in Lumberyard, including instructions on i
 ## Usage
 See video overview on how to use the Chroma GEM component in the Lumberyard editor: Chroma Gem Video Tutorial 
 
+
+## Todo
+- Add support for composite effect across all devices
+- Add more support for ebus events for triggering effects
+- Create deplyable sample project using scripts to communicate with Chroma GEM
+- Integrate CChromaEditor native plugin
+- Add visual grid overlay for easier custom key/led (May just use native plugin integration)
+- Add curve editor to modify effect timings (May just use native plugin integration)
 
 [//]: #
 [lmbtut]: https://gamedev.amazon.com/forums/tutorials
