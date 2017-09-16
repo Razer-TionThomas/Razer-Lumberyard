@@ -39,7 +39,6 @@ namespace Chroma
 			FLASH,
 			WAVE,
 			BREATHING,
-			CUSTOM,
 			RANDOM
 		};
 
@@ -106,14 +105,14 @@ namespace Chroma
 		AZ::u32 maxFrame = 1;
 
 		// Select row to color
-		AZ::u32 cRow = 0;
+		AZ::u32 cRow = 1;
 
 		// Select col to color
-		AZ::u32 cCol = 0;
+		AZ::u32 cCol = 1;
 
 		/*****(************************** Chroma SDK Varaibles   *****************************/
 		// Custom Keyboard Grid
-		ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE keyboardGrid = {};
+		ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE copyKeyboardEffect = {};
 		
 		// Store CurrentEffectId
 		RZEFFECTID m_currEffect;
@@ -144,6 +143,9 @@ namespace Chroma
 		bool prevFrame;
 		bool setRow;
 		bool setCol;
+		bool clearFrame;
+		bool copyFrame;
+		bool pasteFrame;
 		//bool staticEffect;
 		//bool flashEffect;
 		//bool waveEffect;
@@ -180,6 +182,9 @@ namespace Chroma
 		void PaintCol();
 		void ShowFrame(int frame);
 		void PlayCustomAnimation();
+		void ClearFrame();
+		void CopyFrame();
+		void PasteFrame();
 
     };
 

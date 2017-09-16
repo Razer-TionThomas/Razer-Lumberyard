@@ -100,6 +100,9 @@ namespace Chroma
 				->Field("Jump To Frame", &ChromaSystemComponent::newFrame)
 				->Field("Next Frame", &ChromaSystemComponent::nextFrame)
 				->Field("Prev Frame", &ChromaSystemComponent::prevFrame)
+				->Field("Copy Frame", &ChromaSystemComponent::copyFrame)
+				->Field("Paste Frame", &ChromaSystemComponent::pasteFrame)
+				->Field("Clear Frame", &ChromaSystemComponent::clearFrame)
 				->Field("Load Image", &ChromaSystemComponent::importImage)
 				->Field("Load Animation", &ChromaSystemComponent::importAnimation)
 				->Field("Play Custom Effect", &ChromaSystemComponent::playCustomEffect)
@@ -146,7 +149,6 @@ namespace Chroma
 						->EnumAttribute(ChromaEffectValue::FLASH, "Flash")
 						->EnumAttribute(ChromaEffectValue::WAVE, "Wave")
 						->EnumAttribute(ChromaEffectValue::BREATHING, "Breathing")
-						->EnumAttribute(ChromaEffectValue::CUSTOM, "Custom")
 						->EnumAttribute(ChromaEffectValue::RANDOM, "Random")
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::playPresetEffect, "Play Preset Effect", "Plays selected preset effect")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::PlayPresetEffect)
@@ -308,6 +310,12 @@ namespace Chroma
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::IncrementFrame)
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::prevFrame, "Prev Frame", "Decrement Frame Count")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::DecrementFrame)
+					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::copyFrame, "Copy Frame", "Copy Contents of Current Chroma Frame")
+						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::CopyFrame)
+					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::pasteFrame, "Paste Frame", "Paste Contents of Current Chroma Frame")
+						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::PasteFrame)
+					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::clearFrame, "Clear Frame", "Clears the current chroma frame")
+						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::ClearFrame)
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::importImage, "Import Image", "Import jpg, png, bmp")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::LoadSingleImage)
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::importAnimation, "Import Animation", "Import gif animations")
@@ -414,7 +422,7 @@ namespace Chroma
 		g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_NONE, NULL, NULL);
 		g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_NONE, NULL, NULL);
 
-		keyboardGrid = {};
+		copyKeyboardEffect = {};
 	}
 
 	void ChromaSystemComponent::SetChromaDeviceType(AZ::u32 deviceType) {
@@ -443,12 +451,7 @@ namespace Chroma
 			ShowBreathingEffect();
 			break;
 		}
-		case 4:			// Custom Effect 
-		{
-			ShowCustomEffect();
-			break;
-		}
-		case 5:			// Random Effect 
+		case 4:			// Random Effect 
 		{
 			ShowRandomEffect();
 			break;
@@ -997,7 +1000,7 @@ namespace Chroma
 		if (ChromaSystemComponent::chromaDeviceType == 0) {
 			for (UINT c = 0; c < ChromaSDK::Keyboard::MAX_COLUMN; c++)
 			{
-				keyboardFrames[m_currFrameNum - 1].Color[cRow][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+				keyboardFrames[m_currFrameNum - 1].Color[cRow-1][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 			}
 
 			g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], NULL);
@@ -1008,7 +1011,7 @@ namespace Chroma
 		if (ChromaSystemComponent::chromaDeviceType == 0) {
 			for (UINT r = 0; r < ChromaSDK::Keyboard::MAX_ROW; r++)
 			{
-				keyboardFrames[m_currFrameNum - 1].Color[r][cCol] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+				keyboardFrames[m_currFrameNum - 1].Color[r][cCol-1] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 			}
 
 			g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], NULL);
@@ -1016,6 +1019,20 @@ namespace Chroma
 	}
 
 	// Frame Management Functions
+	void ChromaSystemComponent::ClearFrame() {
+		keyboardFrames[m_currFrameNum - 1] = {};
+		g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], NULL);
+	}
+
+	void ChromaSystemComponent::CopyFrame() {
+		copyKeyboardEffect = keyboardFrames[m_currFrameNum - 1];
+	}
+
+	void ChromaSystemComponent::PasteFrame() {
+		keyboardFrames[m_currFrameNum - 1] = copyKeyboardEffect;
+		g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], NULL);
+	}
+
 	void ChromaSystemComponent::JumpToFrame() {
 		if (newFrame > MAXFRAMES) {
 			newFrame = MAXFRAMES;
@@ -1029,6 +1046,8 @@ namespace Chroma
 			maxFrame = m_currFrameNum;
 
 		ShowFrame(m_currFrameNum);
+
+		CryLog("Current Chroma frame = %d ", m_currFrameNum);
 	}
 
 	void ChromaSystemComponent::IncrementFrame() {
@@ -1047,12 +1066,7 @@ namespace Chroma
 
 		ShowFrame(m_currFrameNum);
 
-		float white[4] = { 1.f, 1.f, 1.f, 1.f };
-		if (gEnv && gEnv->pRenderer)
-		{
-			gEnv->pRenderer->Draw2dLabel(32.f, 32.f, 2.f, white, false,
-				"Current Chroma Frame = %d");
-		}
+		CryLog("Current Chroma frame = %d ", m_currFrameNum);
 	}
 
 	void ChromaSystemComponent::DecrementFrame() {
@@ -1067,6 +1081,8 @@ namespace Chroma
 		m_currFrameNum = newFrame;
 
 		ShowFrame(m_currFrameNum);
+
+		CryLog("Current Chroma frame = %d ", m_currFrameNum);
 	}
 
 	void ChromaSystemComponent::PlayCustomAnimation() {
