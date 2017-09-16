@@ -2,11 +2,11 @@
 
 ## Table of Contents
 
-Related
-Frameworks supported
-Prerequisites
-Engine Versions
-Usage
+- Related
+- Frameworks supported
+- Prerequisites
+- Engine Versions
+- Usage
 .
 .
 .
