@@ -8,6 +8,8 @@
 
 #include "ChromaSDKImpl.h"
 
+#define MAXFRAMES 100
+
 namespace Chroma
 {
 
@@ -80,7 +82,7 @@ namespace Chroma
 		// Global Brightness Control
 		float g_effectBrightness;
 
-		AZ::u32 g_effectSpeed;
+		AZ::u32 g_effectSpeed = 100;
 
 		// Component Color Picker Variable
 		AZ::Color ChromaColor;
@@ -91,8 +93,38 @@ namespace Chroma
 		// Select Effect Variable
 		AZ::u32 chromaEffectValue;
 
+		// Select Keyboard Key
+		AZ::u32 ChromaKey;
+
+		// Select (Non-keybaord) Led
+		AZ::u32 ChromaLed;
+
+		// Jump to Frame
+		AZ::u32 newFrame = 1;
+
+		// Set Max Frame (<100)
+		AZ::u32 maxFrame = 1;
+
+		// Select row to color
+		AZ::u32 cRow = 0;
+
+		// Select col to color
+		AZ::u32 cCol = 0;
+
+		/*****(************************** Chroma SDK Varaibles   *****************************/
+		// Custom Keyboard Grid
+		ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE keyboardGrid = {};
+		
 		// Store CurrentEffectId
 		RZEFFECTID m_currEffect;
+
+		// Store Current Frame Number
+		int m_currFrameNum = 1;
+
+		// List of Frames for Custom Animations
+		ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE keyboardFrames[100] = {};
+
+		/*************************************************************************************/
 
 		// Helper Functions
 		COLORREF GetCOLORREFValue(AZ::Color, double brightness);
@@ -102,9 +134,16 @@ namespace Chroma
 		// Component button variables
 		bool clearEffects;
 		bool stopEffect;
-		bool playEffect;
+		bool playPresetEffect;
+		bool playCustomEffect;
 		bool importImage;
 		bool importAnimation;
+		bool setKey;
+		bool setLed;
+		bool nextFrame;
+		bool prevFrame;
+		bool setRow;
+		bool setCol;
 		//bool staticEffect;
 		//bool flashEffect;
 		//bool waveEffect;
@@ -131,7 +170,16 @@ namespace Chroma
 		void LoadAnimation();
 		void ReadImageFile();
 		void StopEffect();
-		void PlayEffect();
+		void PlayPresetEffect();
+		void SetKey();
+		void SetLed();
+		void JumpToFrame();
+		void IncrementFrame();
+		void DecrementFrame();
+		void PaintRow();
+		void PaintCol();
+		void ShowFrame(int frame);
+		void PlayCustomAnimation();
 
     };
 

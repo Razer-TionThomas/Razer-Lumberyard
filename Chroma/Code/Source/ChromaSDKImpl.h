@@ -8,7 +8,7 @@
 #include "../Include/Chroma/RzChromaSDKTypes.h"
 #include "../Include/Chroma/RzErrors.h"
 
-const unsigned long BLACK = RGB(0,0,0);
+const COLORREF BLACK = RGB(0,0,0);
 const COLORREF WHITE = RGB(255,255,255);
 const COLORREF RED = RGB(255,0,0);
 const COLORREF GREEN = RGB(0,255,0);
