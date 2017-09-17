@@ -54,7 +54,7 @@ For information on how to get started in Lumberyard, including instructions on i
 
 
 ## Usage
-See video overview on how to use the Chroma GEM component in the Lumberyard editor: Chroma Gem Video Tutorial 
+See video overview on how to use the Chroma GEM component in the Lumberyard editor: [Chroma Gem Video Tutorial][ChromaGemTutorialVids] 
 
 
 ## Todo
@@ -69,3 +69,4 @@ See video overview on how to use the Chroma GEM component in the Lumberyard edit
 [//]: #
 [lmbtut]: https://gamedev.amazon.com/forums/tutorials
 [lmb-download]: https://aws.amazon.com/lumberyard/downloads/
+[ChromaGemTutorialVids]: https://www.dropbox.com/sh/fpc2cyx43rqkezf/AABejHkC74H0Bk_v1p_cSWFLa?dl=0
