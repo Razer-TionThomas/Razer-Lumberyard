@@ -9,6 +9,7 @@
 #include "ChromaSDKImpl.h"
 
 #define MAXFRAMES 100
+#define MAXDEVICES 6
 
 namespace Chroma
 {
@@ -20,7 +21,6 @@ namespace Chroma
         , protected ChromaRequestBus::Handler
 		, public AZ::TickBus::Handler
 		, protected CrySystemEventBus::Handler // For calendar demo
-		//, public CGameObjectExtensionHelper < ChromaSystemComponent, IGameObjectExtension >
     {
     public:
 		enum ChromDeviceType
@@ -40,6 +40,36 @@ namespace Chroma
 			WAVE,
 			BREATHING,
 			RANDOM
+		};
+
+		enum ChromaLEDs
+		{
+			LED0 = 0,
+			LED1,
+			LED2,
+			LED3,
+			LED4,
+			LED5,
+			LED6,
+			LED7,
+			LED8,
+			LED9,
+			LED10,
+			LED11,
+			LED12,
+			LED13,
+			LED14,
+			LED15,
+			LED16,
+			LED17,
+			LED18,
+			LED19,
+			LED20,
+			LED21,
+			LED22,
+			LED23,
+			LED24,
+			LED25
 		};
 
 		ChromaSystemComponent();
@@ -81,7 +111,7 @@ namespace Chroma
 		// Global Brightness Control
 		float g_effectBrightness;
 
-		AZ::u32 g_effectSpeed = 100;
+		int g_effectSpeed;
 
 		// Component Color Picker Variable
 		AZ::Color ChromaColor;
@@ -102,7 +132,7 @@ namespace Chroma
 		AZ::u32 newFrame = 1;
 
 		// Set Max Frame (<100)
-		AZ::u32 maxFrame = 1;
+		AZ::u32 maxFrame[MAXDEVICES] = { 1 };
 
 		// Select row to color
 		AZ::u32 cRow = 1;
@@ -113,15 +143,38 @@ namespace Chroma
 		/*****(************************** Chroma SDK Varaibles   *****************************/
 		// Custom Keyboard Grid
 		ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE copyKeyboardEffect = {};
+		ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE copyKeypadEffect = {};
+		ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE2 copyMouseEffect = {};
+		ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE copyMousepadEffect = {};
+		ChromaSDK::Headset::CUSTOM_EFFECT_TYPE copyHeadsetEffect = {};
+		ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE copyChromalinkEffect = {};
 		
 		// Store CurrentEffectId
 		RZEFFECTID m_currEffect;
 
+		// Store GroupEffectId
+		RZEFFECTID m_currDeviceEffects[MAXDEVICES];
+
 		// Store Current Frame Number
-		int m_currFrameNum = 1;
+		int m_currFrameNum;
 
 		// List of Frames for Custom Animations
 		ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE keyboardFrames[100] = {};
+		ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE keypadFrames[100] = {};
+		ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE2 mouseFrames[100] = {};
+		ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE mousepadFrames[100] = {};
+		ChromaSDK::Headset::CUSTOM_EFFECT_TYPE headsetFrames[100] = {};
+		ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE chromalinkFrames[100] = {};
+
+		// Mouse Custom Effect LEDs
+		int chromaMouseLEDs[ChromaSDK::Mouse::MAX_LEDS2] = { ChromaSDK::Mouse::RZLED2::RZLED2_BACKLIGHT, ChromaSDK::Mouse::RZLED2::RZLED2_BOTTOM1, ChromaSDK::Mouse::RZLED2::RZLED2_BOTTOM2,
+			ChromaSDK::Mouse::RZLED2::RZLED2_BOTTOM3, ChromaSDK::Mouse::RZLED2::RZLED2_BOTTOM4, ChromaSDK::Mouse::RZLED2::RZLED2_BOTTOM5, ChromaSDK::Mouse::RZLED2::RZLED2_LEFT_SIDE1, 
+			ChromaSDK::Mouse::RZLED2::RZLED2_LEFT_SIDE2, ChromaSDK::Mouse::RZLED2::RZLED2_LEFT_SIDE3, ChromaSDK::Mouse::RZLED2::RZLED2_LEFT_SIDE4, ChromaSDK::Mouse::RZLED2::RZLED2_LEFT_SIDE5,
+			ChromaSDK::Mouse::RZLED2::RZLED2_LEFT_SIDE6, ChromaSDK::Mouse::RZLED2::RZLED2_LEFT_SIDE7, ChromaSDK::Mouse::RZLED2::RZLED2_LOGO, ChromaSDK::Mouse::RZLED2::RZLED2_RIGHT_SIDE1,
+			ChromaSDK::Mouse::RZLED2::RZLED2_RIGHT_SIDE2, ChromaSDK::Mouse::RZLED2::RZLED2_RIGHT_SIDE3, ChromaSDK::Mouse::RZLED2::RZLED2_RIGHT_SIDE4, ChromaSDK::Mouse::RZLED2::RZLED2_RIGHT_SIDE5,
+			ChromaSDK::Mouse::RZLED2::RZLED2_RIGHT_SIDE6, ChromaSDK::Mouse::RZLED2::RZLED2_RIGHT_SIDE7, ChromaSDK::Mouse::RZLED2::RZLED2_SCROLLWHEEL
+		};
+
 
 		/*************************************************************************************/
 
@@ -146,12 +199,9 @@ namespace Chroma
 		bool clearFrame;
 		bool copyFrame;
 		bool pasteFrame;
-		//bool staticEffect;
-		//bool flashEffect;
-		//bool waveEffect;
-		//bool breathingEffect;
-		//bool randomEffect;
-		//bool customEffect;
+		bool fillFrame;
+		bool clearFrames;
+		bool playAllCustomEffect;
 
 		// Repeat Checkbox Variable
 		bool repeatAnimation;
@@ -161,44 +211,33 @@ namespace Chroma
 		void SetEffectSpeed();
 		void ClearEffects();
 		void ShowFlashEffect();
-		void ShowCustomEffect();
 		void ShowRandomEffect();
 		void ShowWaveEffect();
 		void ShowBreathingEffect();
 		void ShowStaticEffect();
-		void SetChromaDeviceType(AZ::u32 deviceType);
+		AZ::Crc32 SetChromaDeviceType(AZ::u32 deviceType);
 		void SetEffectColor(AZ::Color color);
 		void LoadSingleImage();
-		void LoadAnimation();
-		void ReadImageFile();
+		AZ::Crc32 LoadAnimation();
+		bool ReadImageFile();
+		AZ::Crc32 ReadGifAnimationFile();
 		void StopEffect();
 		void PlayPresetEffect();
 		void SetKey();
 		void SetLed();
-		void JumpToFrame();
-		void IncrementFrame();
-		void DecrementFrame();
+		AZ::Crc32 JumpToFrame();
+		AZ::Crc32 IncrementFrame();
+		AZ::Crc32 DecrementFrame();
 		void PaintRow();
 		void PaintCol();
 		void ShowFrame(int frame);
 		void PlayCustomAnimation();
 		void ClearFrame();
+		AZ::Crc32 ClearAllFrames();
 		void CopyFrame();
 		void PasteFrame();
+		void FillFrame();
+		void PlayAllCustomAnimation();
 
     };
-
-	//struct CChromaCreator
-	//	: public IGameObjectExtensionCreatorBase
-	//{
-	//	IGameObjectExtensionPtr Create()
-	//	{
-	//		return gEnv->pEntitySystem->CreateComponent<ChromaSystemComponent>();
-	//	}
-
-	//	void GetGameObjectExtensionRMIData(void** ppRMI, size_t* nCount)
-	//	{
-	//		ChromaSystemComponent::GetGameObjectExtensionRMIData(ppRMI, nCount);
-	//	}
-	//};
 }

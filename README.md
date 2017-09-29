@@ -54,12 +54,13 @@ For information on how to get started in Lumberyard, including instructions on i
 
 
 ## Usage
-See video overview on how to use the Chroma GEM component in the Lumberyard editor: Chroma Gem Video Tutorial 
+See video overview on how to use the Chroma GEM component in the Lumberyard editor: [Chroma Gem Video Tutorial][chroma-vids] 
 
 
 ## Todo
-- Fix image import feature to use QFileDialog instead of CFileDialog
-- Add support for composite effect across all devices
+- Fix image import feature to use QFileDialog instead of CFileDialog (Completed in 9/28 update)
+- Add support for composite effect across all devices (Completed in 9/28 update)
+- Add support to save effects into .chroma file format for cross engine support
 - Add more support for ebus events for triggering effects
 - Create deplyable sample project using scripts to communicate with Chroma GEM
 - Integrate CChromaEditor native plugin
@@ -69,3 +70,4 @@ See video overview on how to use the Chroma GEM component in the Lumberyard edit
 [//]: #
 [lmbtut]: https://gamedev.amazon.com/forums/tutorials
 [lmb-download]: https://aws.amazon.com/lumberyard/downloads/
+[chroma-vids]: https://www.dropbox.com/sh/fpc2cyx43rqkezf/AABejHkC74H0Bk_v1p_cSWFLa?dl=0
