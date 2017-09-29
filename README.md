@@ -37,7 +37,7 @@ The Chroma GEM for Amazon Lumberyard was developed and validated on version 1.9 
 ## Prerequisites
 1 [Download latest Lumberyard Engine][lmb-download] 
 
-2 Follow Amazon's tutorial on how to configure your system to run Lumberyard (see link below)
+2 Follow Amazon's tutorial on how to install, configure your system, and run Lumberyard ([Amazon's Lumberyard tutorial page][lmbtut])
 
 3 Download the Chroma GEM folder and copy it to the Lumberyard Install Path\dev\Gems folder. For example, assuming the default install path for installing Lumberyard 1.9.0.1, you will copy the Chroma Gem folder to the following path:
 ```sh
@@ -49,12 +49,10 @@ C:\Amazon\Lumberyard\1.9.0.1\dev\Gems
 5 Verify that the Chroma GEM is visible and enabled (via check mark) in the Gems Extensions menu
 ![](Images/ProjectConfigChromaGem.png?raw=true)
 
-For information on how to get started in Lumberyard, including instructions on installation, setting up your development environment, and navigating the UI please see [Amazon's Lumberyard tutorial page][lmbtut]
-
-
 
 ## Usage
 See video overview on how to use the Chroma GEM component in the Lumberyard editor: [Chroma Gem Video Tutorial][chroma-vids] 
+
 
 
 ## Todo
