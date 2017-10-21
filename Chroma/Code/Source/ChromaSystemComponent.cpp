@@ -18,6 +18,8 @@
 #include <QMessageBox>
 #include <QMovie>
 
+#define ANIMATION_VERSION 1
+
 namespace Chroma
 {
 	ChromaSystemComponent::ChromaSystemComponent() {
@@ -80,8 +82,8 @@ namespace Chroma
 				->Field("Chroma Led", &ChromaSystemComponent::ChromaLed)
 				->Field("Set Key", &ChromaSystemComponent::setKey)
 				->Field("Set Led", &ChromaSystemComponent::setLed)
-				->Field("Keyboard Row", &ChromaSystemComponent::cRow)
-				->Field("Keyboard Col", &ChromaSystemComponent::cCol)
+				->Field("Row", &ChromaSystemComponent::cRow)
+				->Field("Column", &ChromaSystemComponent::cCol)
 				->Field("Set Row", &ChromaSystemComponent::setRow)
 				->Field("Set Col", &ChromaSystemComponent::setCol)
 				->Field("Jump To Frame", &ChromaSystemComponent::newFrame)
@@ -96,6 +98,8 @@ namespace Chroma
 				->Field("Load Animation", &ChromaSystemComponent::importAnimation)
 				->Field("Play Custom", &ChromaSystemComponent::playCustomEffect)
 				->Field("Play All Custom", &ChromaSystemComponent::playAllCustomEffect)
+				->Field("Import Effect", &ChromaSystemComponent::importEffect)
+				->Field("Export Effect", &ChromaSystemComponent::exportEffect)
 				;
 
 			if (AZ::EditContext* ec = serialize->GetEditContext())
@@ -115,6 +119,7 @@ namespace Chroma
 						->EnumAttribute(ChromDeviceType::KEYPAD, "Keypad")
 						->EnumAttribute(ChromDeviceType::CHROMALINK, "ChromaLink")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::SetChromaDeviceType)
+						->Attribute("ChangeNotify", AZ_CRC("RefreshValues", 0x28e720d4))
 					->DataElement(AZ::Edit::UIHandlers::Default, &ChromaSystemComponent::ChromaColor, "Chroma Color", "Chroma Color picker")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::SetEffectColor)
 					->DataElement(AZ::Edit::UIHandlers::Slider, &ChromaSystemComponent::g_effectBrightness, "Brightness Control", "Use to set color brightness for current effect")
@@ -135,11 +140,10 @@ namespace Chroma
 					->ClassElement(AZ::Edit::ClassElements::Group, "Chroma Preset Effects")
 						->Attribute(AZ::Edit::Attributes::AutoExpand, false)
 					->DataElement(AZ::Edit::UIHandlers::ComboBox, &ChromaSystemComponent::chromaEffectValue, "Select Preset Effect", "Select Chroma Effect Preset")
-						->EnumAttribute(ChromaEffectValue::STATIC, "Static")
-						->EnumAttribute(ChromaEffectValue::FLASH, "Alert")
+						->EnumAttribute(ChromaEffectValue::RANDOM, "Random")
 						->EnumAttribute(ChromaEffectValue::WAVE, "Wave")
 						->EnumAttribute(ChromaEffectValue::BREATHING, "Breathing")
-						->EnumAttribute(ChromaEffectValue::RANDOM, "Random")
+						->EnumAttribute(ChromaEffectValue::RAINBOW, "Rainbow")
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::playPresetEffect, "Play Preset Effect", "Plays selected preset effect")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::PlayPresetEffect)
 					->ClassElement(AZ::Edit::ClassElements::Group, "Chroma Custom Effects")
@@ -288,21 +292,21 @@ namespace Chroma
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::SetKey)
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::setLed, "Set Led Color", "Color Selected Key")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::SetLed)
-					->DataElement(AZ::Edit::UIHandlers::Default, &ChromaSystemComponent::cRow, "Keyboard Row", "Specify Keyboard Row to Paint")
+					->DataElement(AZ::Edit::UIHandlers::Default, &ChromaSystemComponent::cRow, "Row", "Specify Device Row to Paint")
 						->Attribute(AZ::Edit::Attributes::Min, 1)
 						->Attribute(AZ::Edit::Attributes::Max, 6)
-					->DataElement(AZ::Edit::UIHandlers::Default, &ChromaSystemComponent::cCol, " Keyboard Column", "Specify Keyboard Column to Paint")
+					->DataElement(AZ::Edit::UIHandlers::Default, &ChromaSystemComponent::cCol, " Column", "Specify Device Column to Paint")
 						->Attribute(AZ::Edit::Attributes::Min, 1)
 						->Attribute(AZ::Edit::Attributes::Max, 22)
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::setRow, "Paint Row", "Color Entire Row On Keyboard")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::PaintRow)
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::setCol, "Paint Column", "Color Entire Column On Keyboard")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::PaintCol)
-					->DataElement(AZ::Edit::UIHandlers::Default, &ChromaSystemComponent::newFrame, "Jump to Frame", "Frame must be <100")
+					->DataElement(AZ::Edit::UIHandlers::Default, &ChromaSystemComponent::newFrame, "Jump to Frame", "Frame must be <MAXFRAMES")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::JumpToFrame)
 						->Attribute(AZ::Edit::Attributes::ContainerCanBeModified, true)
 						->Attribute(AZ::Edit::Attributes::Min, 1)
-						->Attribute(AZ::Edit::Attributes::Max, 100)
+						->Attribute(AZ::Edit::Attributes::Max, MAXFRAMES)
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::nextFrame, "Next Frame", "Increment Frame Count")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::IncrementFrame)
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::prevFrame, "Prev Frame", "Decrement Frame Count")
@@ -325,6 +329,10 @@ namespace Chroma
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::PlayCustomAnimation)
 					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::playAllCustomEffect, "Play Custom All Devices", "Plays custom animation on all devices simultaneously")
 						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::PlayAllCustomAnimation)
+					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::importEffect, "Import Effect", "Imports existing .chroma effect file into the Lumberyard editor")
+						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::ImportChromaEffect)
+					->DataElement(AZ::Edit::UIHandlers::Button, &ChromaSystemComponent::exportEffect, "Export Effect", "Creates .chroma effect file for current effect")
+						->Attribute(AZ::Edit::Attributes::ChangeNotify, &ChromaSystemComponent::ExportChromaEffect)
 					;
 			}
 		}
@@ -378,15 +386,7 @@ namespace Chroma
 
 	void ChromaSystemComponent::OnCrySystemInitialized(ISystem&, const SSystemInitParams&) // For calendar demo
 	{
-		if (QtViewPaneManager* paneManager = QtViewPaneManager::instance())
-		{
-			//ViewPaneFactory paneFactory = []() { return new QCalendarWidget();
-			////ShowChromaEffects();
-			//};
-			//paneManager->RegisterPane("Static Effect", "Chroma", paneFactory);
-			//paneManager->RegisterPane("Breathing Effect", "Chroma", paneFactory);
-			//paneManager->RegisterPane("Wave Effect", "Chroma", paneFactory);
-		}
+
 	}
 
 	void ChromaSystemComponent::OnTick(float deltaTime, AZ::ScriptTimePoint time) {
@@ -411,7 +411,20 @@ namespace Chroma
 	}
 
 	void ChromaSystemComponent::SetEffectSpeed() {
+		int test = 0;
+	}
 
+	AZ::Crc32 ChromaSystemComponent::SetChromaDeviceType() {
+		g_ChromaSDKImpl.mDeviceType = this->chromaDeviceType;
+
+		m_currFrameNum = 1;
+
+		return AZ::Edit::PropertyRefreshLevels::ValuesOnly;
+	}
+
+	void ChromaSystemComponent::SetEffectColor() {
+
+		int test = 0;
 	}
 
 	void ChromaSystemComponent::StopEffect() {
@@ -436,39 +449,26 @@ namespace Chroma
 		copyKeyboardEffect = {};
 	}
 
-	AZ::Crc32 ChromaSystemComponent::SetChromaDeviceType(AZ::u32 deviceType) {
-		g_ChromaSDKImpl.mDeviceType = deviceType;
-
-		m_currFrameNum = 1;
-
-		return AZ::Edit::PropertyRefreshLevels::ValuesOnly;
-	}
-
 	void ChromaSystemComponent::PlayPresetEffect() {
 		switch (chromaEffectValue) {
 		case 0:			// Static Effect 
 		{
-			ShowStaticEffect();
+			ShowRandomEffect();
 			break;
 		}
-		case 1:			// Flash Effect 
-		{
-			ShowFlashEffect();
-			break;
-		}
-		case 2:			// Wave Effect 
+		case 1:			// Wave Effect 
 		{
 			ShowWaveEffect();
 			break;
 		}
-		case 3:			// Breathing Effect 
+		case 2:			// Breathing Effect 
 		{
 			ShowBreathingEffect();
 			break;
 		}
-		case 4:			// Random Effect 
+		case 3:			// Random Effect 
 		{
-			ShowRandomEffect();
+			ShowRainbowEffect();
 			break;
 		}
 
@@ -482,203 +482,220 @@ namespace Chroma
 
 		// Keyboard Device
 		if (ChromaSystemComponent::chromaDeviceType == 0) {
-			ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE KeyboardEffect = {};
+			//ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE KeyboardEffect = {};
 
 			RZEFFECTID frames[ChromaSDK::Keyboard::MAX_COLUMN + 1];
 
 			for (UINT c = 0; c < ChromaSDK::Keyboard::MAX_COLUMN; c++)
 			{
-				KeyboardEffect = {};
+				//KeyboardEffect = {};
 
 				for (int r = ChromaSDK::Keyboard::MAX_ROW - 1; r >= 0; r--)
 				{
 					if ((r == 0) && (c == 20))
 						continue;   // Skip the Razer logo.
-					KeyboardEffect.Color[r][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+					keyboardFrames[m_currFrameNum - 1].Color[r][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 				}
 
-				g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &KeyboardEffect, &frames[c]);
+				g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], &frames[c]);
 				g_ChromaSDKImpl.AddToGroup(GroupEffectId, frames[c], g_effectSpeed);
+				
+				IncrementFrame();
 			}
 
 		}
 
 		// Mouse Device
 		else if (ChromaSystemComponent::chromaDeviceType == 1) {
-			ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE2 MouseEffect = {};
+			//ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE2 MouseEffect = {};
 
 			RZEFFECTID frames[ChromaSDK::Mouse::MAX_COLUMN + 1];
 
 			for (UINT c = 0; c < ChromaSDK::Mouse::MAX_COLUMN; c++)
 			{
-				MouseEffect = {};
+				//MouseEffect = {};
 
 				for (UINT r = 0; r < ChromaSDK::Mouse::MAX_ROW; r++)
 				{
-					MouseEffect.Color[r][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+					mouseFrames[m_currFrameNum - 1].Color[r][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 				}
-				g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_CUSTOM2, &MouseEffect, &frames[c]);
+				g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_CUSTOM2, &mouseFrames[m_currFrameNum - 1], &frames[c]);
 				g_ChromaSDKImpl.AddToGroup(GroupEffectId, frames[c], g_effectSpeed);
+
+				IncrementFrame();
 			}
 		}
 
 		// Mousepad Device
 		else if (ChromaSystemComponent::chromaDeviceType == 2) {
-			ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE MousePadEffect = {};
+			//ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE MousePadEffect = {};
 
 			RZEFFECTID frames[ChromaSDK::Mousepad::MAX_LEDS + 1];
 
 			for (UINT l = 0; l < ChromaSDK::Mousepad::MAX_LEDS; l++)
 			{
-				MousePadEffect = {};
-				MousePadEffect.Color[l] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+				//MousePadEffect = {};
+				mousepadFrames[m_currFrameNum - 1].Color[l] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 
-				g_ChromaSDKImpl.CreateMousematEffectImpl(ChromaSDK::Mousepad::CHROMA_CUSTOM, &MousePadEffect, &frames[l]);
+				g_ChromaSDKImpl.CreateMousematEffectImpl(ChromaSDK::Mousepad::CHROMA_CUSTOM, &mousepadFrames[m_currFrameNum - 1], &frames[l]);
 				g_ChromaSDKImpl.AddToGroup(GroupEffectId, frames[l], g_effectSpeed);
+
+				IncrementFrame();
 			}
 
 		}
 
 		// Headset Device
 		else if (ChromaSystemComponent::chromaDeviceType == 3) {
-			ChromaSDK::Headset::CUSTOM_EFFECT_TYPE HeadsetEffect = {};
+			//ChromaSDK::Headset::CUSTOM_EFFECT_TYPE HeadsetEffect = {};
 
 			RZEFFECTID frames[ChromaSDK::Headset::MAX_LEDS + 1];
 
 			for (UINT l = 0; l < ChromaSDK::Headset::MAX_LEDS; l++)
 			{
-				HeadsetEffect = {};
-				HeadsetEffect.Color[l] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+				//HeadsetEffect = {};
+				headsetFrames[m_currFrameNum - 1].Color[l] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 
-				g_ChromaSDKImpl.CreateHeadsetEffectImpl(ChromaSDK::Headset::CHROMA_CUSTOM, &HeadsetEffect, &frames[l]);
+				g_ChromaSDKImpl.CreateHeadsetEffectImpl(ChromaSDK::Headset::CHROMA_CUSTOM, &headsetFrames[m_currFrameNum - 1], &frames[l]);
 				g_ChromaSDKImpl.AddToGroup(GroupEffectId, frames[l], g_effectSpeed);
+
+				IncrementFrame();
 			}
 		}
 
 		// Keypad Device
 		else if (ChromaSystemComponent::chromaDeviceType == 4) {
-			ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE KeypadEffect = {};
+			//ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE KeypadEffect = {};
 
 			RZEFFECTID frames[ChromaSDK::Keypad::MAX_COLUMN + 1];
 
 			for (UINT c = 0; c < ChromaSDK::Keypad::MAX_COLUMN; c++)
 			{
-				KeypadEffect = {};
+				//KeypadEffect = {};
 
 				for (int r = ChromaSDK::Keyboard::MAX_ROW - 1; r >= 0; r--)
 				{
-					KeypadEffect.Color[r][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+					keypadFrames[m_currFrameNum - 1].Color[r][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 				}
 
-				g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_CUSTOM, &KeypadEffect, &frames[c]);
+				g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_CUSTOM, &keypadFrames[m_currFrameNum - 1], &frames[c]);
 				g_ChromaSDKImpl.AddToGroup(GroupEffectId, frames[c], g_effectSpeed);
+
+				IncrementFrame();
 			}
 		}
 
 		// Chromalink Device
 		else if (ChromaSystemComponent::chromaDeviceType == 5) {
-			ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE ChromalinkEffect = {};
+			//ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE ChromalinkEffect = {};
 
 			RZEFFECTID frames[ChromaSDK::ChromaLink::MAX_LEDS + 1];
 
 			for (UINT l = 0; l < ChromaSDK::ChromaLink::MAX_LEDS; l++)
 			{
-				ChromalinkEffect = {};
-				ChromalinkEffect.Color[l] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+				//ChromalinkEffect = {};
+				chromalinkFrames[m_currFrameNum - 1].Color[l] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 
-				g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_CUSTOM, &ChromalinkEffect, &frames[l]);
+				g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_CUSTOM, &chromalinkFrames[m_currFrameNum - 1], &frames[l]);
 				g_ChromaSDKImpl.AddToGroup(GroupEffectId, frames[l], g_effectSpeed);
+
+				IncrementFrame();
 			}
 		}
 
 		
 		g_ChromaSDKImpl.SetEffectImpl(GroupEffectId);
 		m_currEffect = GroupEffectId;
+
 	}
 
 	void ChromaSystemComponent::ShowBreathingEffect() {
+		const int brightnessCount = 11;
+
 		RZEFFECTID GroupEffectId = GUID_NULL;
 		g_ChromaSDKImpl.CreateEffectGroup(&GroupEffectId, repeatAnimation);
 
-		RZEFFECTID Frames[11] = { 0 };
-		double Brightness[11] = { 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0 };
+		RZEFFECTID Frames[brightnessCount] = { 0 };
+		double Brightness[brightnessCount] = { 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0 };
 		double brightness = 0.0;
 
 		UINT index = 0;
 		UINT count = 0;
-		while (count < 11)		// Loop through 5 times (5 * number of brightness values (i.e 11))
+		while (count < brightnessCount)
 		{
 			brightness = Brightness[index];
 
 			if (ChromaSystemComponent::chromaDeviceType == 0) {
-				ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE KeyboardEffect = {};
+				//ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE KeyboardEffect = {};
 
 				for (UINT r = 0; r < ChromaSDK::Keyboard::MAX_ROW; r++)
 				{
 					for (UINT c = 0; c < ChromaSDK::Keyboard::MAX_COLUMN; c++)
 					{
-						KeyboardEffect.Color[r][c] = GetCOLORREFValue(ChromaColor, brightness);
+						keyboardFrames[m_currFrameNum - 1].Color[r][c] = GetCOLORREFValue(ChromaColor, brightness);
 					}
 				}
-				g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &KeyboardEffect, &Frames[index]);
+				g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], &Frames[index]);
 			}
 			else if (ChromaSystemComponent::chromaDeviceType == 1) {
-				ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE2 MouseEffect = {};
+				//ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE2 MouseEffect = {};
 
 				for (UINT r = 0; r < ChromaSDK::Mouse::MAX_ROW; r++)
 				{
 					for (UINT c = 0; c < ChromaSDK::Mouse::MAX_COLUMN; c++)
 					{
-						MouseEffect.Color[r][c] = GetCOLORREFValue(ChromaColor, brightness);
+						mouseFrames[m_currFrameNum - 1].Color[r][c] = GetCOLORREFValue(ChromaColor, brightness);
 					}
 				}
-				g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_CUSTOM2, &MouseEffect, &Frames[index]);
+				g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_CUSTOM2, &mouseFrames[m_currFrameNum - 1], &Frames[index]);
 			}
 			else if (ChromaSystemComponent::chromaDeviceType == 2) {
-				ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE MousepadEffect = {};
+				//ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE MousepadEffect = {};
 
 				for (UINT r = 0; r < ChromaSDK::Mousepad::MAX_LEDS; r++)
 				{
-					MousepadEffect.Color[r] = GetCOLORREFValue(ChromaColor, brightness);
+					mousepadFrames[m_currFrameNum - 1].Color[r] = GetCOLORREFValue(ChromaColor, brightness);
 				}
-				g_ChromaSDKImpl.CreateMousematEffectImpl(ChromaSDK::Mousepad::CHROMA_CUSTOM, &MousepadEffect, &Frames[index]);
+				g_ChromaSDKImpl.CreateMousematEffectImpl(ChromaSDK::Mousepad::CHROMA_CUSTOM, &mousepadFrames[m_currFrameNum - 1], &Frames[index]);
 			}
 			else if (ChromaSystemComponent::chromaDeviceType == 3) {
-				ChromaSDK::Headset::CUSTOM_EFFECT_TYPE HeadsetEffect = {};
+				//ChromaSDK::Headset::CUSTOM_EFFECT_TYPE HeadsetEffect = {};
 
 				for (UINT r = 0; r < ChromaSDK::Headset::MAX_LEDS; r++)
 				{
-					HeadsetEffect.Color[r] = GetCOLORREFValue(ChromaColor, brightness);
+					headsetFrames[m_currFrameNum - 1].Color[r] = GetCOLORREFValue(ChromaColor, brightness);
 				}
-				g_ChromaSDKImpl.CreateHeadsetEffectImpl(ChromaSDK::Headset::CHROMA_CUSTOM, &HeadsetEffect, &Frames[index]);
+				g_ChromaSDKImpl.CreateHeadsetEffectImpl(ChromaSDK::Headset::CHROMA_CUSTOM, &headsetFrames[m_currFrameNum - 1], &Frames[index]);
 			}
 			else if (ChromaSystemComponent::chromaDeviceType == 4) {
-				ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE KeypadEffect = {};
+				//ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE KeypadEffect = {};
 
 				for (UINT r = 0; r < ChromaSDK::Keypad::MAX_ROW; r++)
 				{
 					for (UINT c = 0; c < ChromaSDK::Keypad::MAX_COLUMN; c++)
 					{
-						KeypadEffect.Color[r][c] = GetCOLORREFValue(ChromaColor, brightness);
+						keypadFrames[m_currFrameNum - 1].Color[r][c] = GetCOLORREFValue(ChromaColor, brightness);
 					}
 				}
-				g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_CUSTOM, &KeypadEffect, &Frames[index]);
+				g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_CUSTOM, &keypadFrames[m_currFrameNum - 1], &Frames[index]);
 			}
 			else if (ChromaSystemComponent::chromaDeviceType == 5) {
-				ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE ChromaLinkEffect = {};
+				//ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE ChromaLinkEffect = {};
 
 				for (UINT r = 0; r < ChromaSDK::ChromaLink::MAX_LEDS; r++)
 				{
-					ChromaLinkEffect.Color[r] = GetCOLORREFValue(ChromaColor, brightness);
+					chromalinkFrames[m_currFrameNum - 1].Color[r] = GetCOLORREFValue(ChromaColor, brightness);
 				}
-				g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_CUSTOM, &ChromaLinkEffect, &Frames[index]);
+				g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_CUSTOM, &chromalinkFrames[m_currFrameNum - 1], &Frames[index]);
 			}
 
 			index++;
 			count++;
+
+			IncrementFrame();
 		}
 
-		for (int i = 0; i < 11; i++) {
+		for (int i = 0; i < brightnessCount; i++) {
 			g_ChromaSDKImpl.AddToGroup(GroupEffectId, Frames[i], g_effectSpeed);
 		}
 
@@ -686,114 +703,102 @@ namespace Chroma
 		m_currEffect = GroupEffectId;
 	}
 	
-	void ChromaSystemComponent::ShowStaticEffect() {
-		if (ChromaSystemComponent::chromaDeviceType == 0) {
-			ChromaSDK::Keyboard::STATIC_EFFECT_TYPE staticEffect = {};
+	void ChromaSystemComponent::ShowRainbowEffect() {
+		const int RainbowSize = 7;
 
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
-
-			g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_STATIC, &staticEffect, NULL);
-		}
-		else if (ChromaSystemComponent::chromaDeviceType == 1) {
-			ChromaSDK::Mouse::STATIC_EFFECT_TYPE staticEffect = {};
-			staticEffect.LEDId = ChromaSDK::Mouse::RZLED_ALL;
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
-
-			g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_STATIC, &staticEffect, NULL);
-		}
-		else if (ChromaSystemComponent::chromaDeviceType == 2) {
-			ChromaSDK::Mousepad::STATIC_EFFECT_TYPE staticEffect = {};
-
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
-
-			g_ChromaSDKImpl.CreateMousematEffectImpl(ChromaSDK::Mousepad::CHROMA_STATIC, &staticEffect, NULL);
-		}
-		else if (ChromaSystemComponent::chromaDeviceType == 3) {
-			ChromaSDK::Headset::STATIC_EFFECT_TYPE staticEffect = {};
-
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
-
-			g_ChromaSDKImpl.CreateHeadsetEffectImpl(ChromaSDK::Headset::CHROMA_STATIC, &staticEffect, NULL);
-		}
-		else if (ChromaSystemComponent::chromaDeviceType == 4) {
-			ChromaSDK::Keypad::STATIC_EFFECT_TYPE staticEffect = {};
-
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
-
-			g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_STATIC, &staticEffect, NULL);
-		}
-		else if (ChromaSystemComponent::chromaDeviceType == 5) {
-			ChromaSDK::ChromaLink::STATIC_EFFECT_TYPE staticEffect = {};
-
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
-
-			g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_STATIC, &staticEffect, NULL);
-		}
-	}
-
-	void ChromaSystemComponent::SetEffectColor(AZ::Color color) {
-
-		//g_ChromaSDKImpl.staticColor = GetCOLORREFValue(ChromaColor);
-	}
-
-	void ChromaSystemComponent::ShowFlashEffect() {
 		RZEFFECTID GroupEffectId = GUID_NULL;
 		g_ChromaSDKImpl.CreateEffectGroup(&GroupEffectId, repeatAnimation);
-
-		RZEFFECTID colorFrame;
-		RZEFFECTID blankFrame;
 		
-		if (ChromaSystemComponent::chromaDeviceType == 0) {
-			ChromaSDK::Keyboard::STATIC_EFFECT_TYPE staticEffect = {};
+		RZEFFECTID Frames[RainbowSize] = { 0 };
 
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+		COLORREF rainbowArray[RainbowSize] = { RED, ORANGE, YELLOW, GREEN, BLUE, INDIGO, VIOLET };
 
-			g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_STATIC, &staticEffect, &colorFrame);
-			g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_NONE, NULL, &blankFrame);
+		UINT colorIndex = 0;
+		UINT count = 0;
+		while (count < RainbowSize)
+		{
+			if (ChromaSystemComponent::chromaDeviceType == 0) {
+				for (UINT r = 0; r < ChromaSDK::Keyboard::MAX_ROW; r++)
+				{
+					for (UINT c = 0; c < ChromaSDK::Keyboard::MAX_COLUMN; c++)
+					{
+						keyboardFrames[m_currFrameNum - 1].Color[r][c] = RGB(GetRValue(rainbowArray[colorIndex])*g_effectBrightness, 
+																			 GetGValue(rainbowArray[colorIndex])*g_effectBrightness, 
+																			 GetBValue(rainbowArray[colorIndex])*g_effectBrightness);
+					}
+				}
+				g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], &Frames[colorIndex]);
+			}
+			else if (ChromaSystemComponent::chromaDeviceType == 1) {
+
+				for (UINT r = 0; r < ChromaSDK::Mouse::MAX_ROW; r++)
+				{
+					for (UINT c = 0; c < ChromaSDK::Mouse::MAX_COLUMN; c++)
+					{
+						mouseFrames[m_currFrameNum - 1].Color[r][c] = RGB(GetRValue(rainbowArray[colorIndex])*g_effectBrightness,
+																		  GetGValue(rainbowArray[colorIndex])*g_effectBrightness,
+																		  GetBValue(rainbowArray[colorIndex])*g_effectBrightness);
+					}
+				}
+				g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_CUSTOM2, &mouseFrames[m_currFrameNum - 1], &Frames[colorIndex]);
+			}
+			else if (ChromaSystemComponent::chromaDeviceType == 2) {
+				//ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE MousepadEffect = {};
+
+				for (UINT r = 0; r < ChromaSDK::Mousepad::MAX_LEDS; r++)
+				{
+					mousepadFrames[m_currFrameNum - 1].Color[r] = RGB(GetRValue(rainbowArray[colorIndex])*g_effectBrightness,
+																	  GetGValue(rainbowArray[colorIndex])*g_effectBrightness,
+																	  GetBValue(rainbowArray[colorIndex])*g_effectBrightness);
+				}
+				g_ChromaSDKImpl.CreateMousematEffectImpl(ChromaSDK::Mousepad::CHROMA_CUSTOM, &mousepadFrames[m_currFrameNum - 1], &Frames[colorIndex]);
+			}
+			else if (ChromaSystemComponent::chromaDeviceType == 3) {
+				//ChromaSDK::Headset::CUSTOM_EFFECT_TYPE HeadsetEffect = {};
+
+				for (UINT r = 0; r < ChromaSDK::Headset::MAX_LEDS; r++)
+				{
+					headsetFrames[m_currFrameNum - 1].Color[r] = RGB(GetRValue(rainbowArray[colorIndex])*g_effectBrightness,
+																	 GetGValue(rainbowArray[colorIndex])*g_effectBrightness,
+																	 GetBValue(rainbowArray[colorIndex])*g_effectBrightness);
+				}
+				g_ChromaSDKImpl.CreateHeadsetEffectImpl(ChromaSDK::Headset::CHROMA_CUSTOM, &headsetFrames[m_currFrameNum - 1], &Frames[colorIndex]);
+			}
+			else if (ChromaSystemComponent::chromaDeviceType == 4) {
+				//ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE KeypadEffect = {};
+
+				for (UINT r = 0; r < ChromaSDK::Keypad::MAX_ROW; r++)
+				{
+					for (UINT c = 0; c < ChromaSDK::Keypad::MAX_COLUMN; c++)
+					{
+						keypadFrames[m_currFrameNum - 1].Color[r][c] = RGB(GetRValue(rainbowArray[colorIndex])*g_effectBrightness,
+																		   GetGValue(rainbowArray[colorIndex])*g_effectBrightness,
+																		   GetBValue(rainbowArray[colorIndex])*g_effectBrightness);
+					}
+				}
+				g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_CUSTOM, &keypadFrames[m_currFrameNum - 1], &Frames[colorIndex]);
+			}
+			else if (ChromaSystemComponent::chromaDeviceType == 5) {
+				//ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE ChromaLinkEffect = {};
+
+				for (UINT r = 0; r < ChromaSDK::ChromaLink::MAX_LEDS; r++)
+				{
+					chromalinkFrames[m_currFrameNum - 1].Color[r] = RGB(GetRValue(rainbowArray[colorIndex])*g_effectBrightness,
+																		GetGValue(rainbowArray[colorIndex])*g_effectBrightness,
+																		GetBValue(rainbowArray[colorIndex])*g_effectBrightness);
+				}
+				g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_CUSTOM, &chromalinkFrames[m_currFrameNum - 1], &Frames[colorIndex]);
+			}
+
+			colorIndex++;
+			count++;
+
+			IncrementFrame();
 		}
-		else if (ChromaSystemComponent::chromaDeviceType == 1) {
-			ChromaSDK::Mouse::STATIC_EFFECT_TYPE staticEffect = {};
-			staticEffect.LEDId = ChromaSDK::Mouse::RZLED_ALL;
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 
-			g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_STATIC, &staticEffect, &colorFrame);
-			g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_NONE, NULL, &blankFrame);
+		for (int i = 0; i < RainbowSize; i++) {
+			g_ChromaSDKImpl.AddToGroup(GroupEffectId, Frames[i], g_effectSpeed);
 		}
-		else if (ChromaSystemComponent::chromaDeviceType == 2) {
-			ChromaSDK::Mousepad::STATIC_EFFECT_TYPE staticEffect = {};
-
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
-
-			g_ChromaSDKImpl.CreateMousematEffectImpl(ChromaSDK::Mousepad::CHROMA_STATIC, &staticEffect, &colorFrame);
-			g_ChromaSDKImpl.CreateMousematEffectImpl(ChromaSDK::Mousepad::CHROMA_NONE, NULL, &blankFrame);
-		}
-		else if (ChromaSystemComponent::chromaDeviceType == 3) {
-			ChromaSDK::Headset::STATIC_EFFECT_TYPE staticEffect = {};
-
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
-
-			g_ChromaSDKImpl.CreateHeadsetEffectImpl(ChromaSDK::Headset::CHROMA_STATIC, &staticEffect, &colorFrame);
-			g_ChromaSDKImpl.CreateHeadsetEffectImpl(ChromaSDK::Headset::CHROMA_NONE, NULL, &blankFrame);
-		}
-		else if (ChromaSystemComponent::chromaDeviceType == 4) {
-			ChromaSDK::Keypad::STATIC_EFFECT_TYPE staticEffect = {};
-
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
-
-			g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_STATIC, &staticEffect, &colorFrame);
-			g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_NONE, NULL, &blankFrame);
-		}
-		else if (ChromaSystemComponent::chromaDeviceType == 5) {
-			ChromaSDK::ChromaLink::STATIC_EFFECT_TYPE staticEffect = {};
-
-			staticEffect.Color = GetCOLORREFValue(ChromaColor, g_effectBrightness);
-
-			g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_STATIC, &staticEffect, &colorFrame);
-			g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_NONE, NULL, &blankFrame);
-		}
-
-		g_ChromaSDKImpl.AddToGroup(GroupEffectId, blankFrame, g_effectSpeed);
-		g_ChromaSDKImpl.AddToGroup(GroupEffectId, colorFrame, g_effectSpeed);
 
 		g_ChromaSDKImpl.SetEffectImpl(GroupEffectId);
 		m_currEffect = GroupEffectId;
@@ -806,7 +811,7 @@ namespace Chroma
 		const int arraySize = 11;
 
 		RZEFFECTID KBFrame = GUID_NULL;
-		COLORREF rainbowArray[arraySize] = { RED, ORANGE, YELLOW, GREEN, BLUE, INDIGO, VIOLET, WHITE, CYAN, PINK, GREY };
+		COLORREF randomArray[arraySize] = { RED, ORANGE, YELLOW, GREEN, BLUE, INDIGO, VIOLET, WHITE, CYAN, PINK, GREY };
 
 		UINT rand = 0;
 		UINT colorIndex = 0;
@@ -816,75 +821,87 @@ namespace Chroma
 		
 		
 		if (ChromaSystemComponent::chromaDeviceType == 0) {
- 			ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE KeyboardEffect = {};
+ 			//ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE KeyboardEffect = {};
 
 			for (UINT r = 0; r < ChromaSDK::Keyboard::MAX_ROW; r++)
 			{
 				for (UINT c = 0; c < ChromaSDK::Keyboard::MAX_COLUMN; c++)
 				{
 					colorIndex = g.Rand32() % arraySize;
-					KeyboardEffect.Color[r][c] = rainbowArray[colorIndex];
+					keyboardFrames[m_currFrameNum - 1].Color[r][c] = RGB(GetRValue(randomArray[colorIndex])*g_effectBrightness,
+																		 GetGValue(randomArray[colorIndex])*g_effectBrightness,
+																		 GetBValue(randomArray[colorIndex])*g_effectBrightness);
 				}
 			}
-			g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &KeyboardEffect, NULL);
+			g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], NULL);
 
 		}
 		else if (ChromaSystemComponent::chromaDeviceType == 1) {
-			ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE2 MouseEffect = {};
+			//ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE2 MouseEffect = {};
 
 			for (UINT r = 0; r < ChromaSDK::Mouse::MAX_ROW; r++)
 			{
 				for (UINT c = 0; c < ChromaSDK::Mouse::MAX_COLUMN; c++)
 				{
 					colorIndex = g.Rand32() % arraySize;
-					MouseEffect.Color[r][c] = rainbowArray[colorIndex];
+					mouseFrames[m_currFrameNum - 1].Color[r][c] = RGB(GetRValue(randomArray[colorIndex])*g_effectBrightness,
+																	  GetGValue(randomArray[colorIndex])*g_effectBrightness,
+																	  GetBValue(randomArray[colorIndex])*g_effectBrightness);
 				}
 			}
-			g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_CUSTOM2, &MouseEffect, NULL);
+			g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_CUSTOM2, &mouseFrames[m_currFrameNum - 1], NULL);
 
 		}
 		else if (ChromaSystemComponent::chromaDeviceType == 2) {
-			ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE MousepadEffect = {};
+			//ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE MousepadEffect = {};
 
 			for (UINT r = 0; r < ChromaSDK::Mousepad::MAX_LEDS; r++)
 			{
 				colorIndex = g.Rand32() % arraySize;
-				MousepadEffect.Color[r] = rainbowArray[colorIndex];
+				mousepadFrames[m_currFrameNum - 1].Color[r] = RGB(GetRValue(randomArray[colorIndex])*g_effectBrightness,
+																  GetGValue(randomArray[colorIndex])*g_effectBrightness,
+																  GetBValue(randomArray[colorIndex])*g_effectBrightness);
 			}
-			g_ChromaSDKImpl.CreateMousematEffectImpl(ChromaSDK::Mousepad::CHROMA_CUSTOM, &MousepadEffect, NULL);
+			g_ChromaSDKImpl.CreateMousematEffectImpl(ChromaSDK::Mousepad::CHROMA_CUSTOM, &mousepadFrames[m_currFrameNum - 1], NULL);
 		}
 		else if (ChromaSystemComponent::chromaDeviceType == 3) {
-			ChromaSDK::Headset::CUSTOM_EFFECT_TYPE HeadsetEffect = {};
+			//ChromaSDK::Headset::CUSTOM_EFFECT_TYPE HeadsetEffect = {};
 
 			for (UINT r = 0; r < ChromaSDK::Headset::MAX_LEDS; r++)
 			{
 				colorIndex = g.Rand32() % arraySize;
-				HeadsetEffect.Color[r] = rainbowArray[colorIndex];
+				headsetFrames[m_currFrameNum - 1].Color[r] = RGB(GetRValue(randomArray[colorIndex])*g_effectBrightness,
+																 GetGValue(randomArray[colorIndex])*g_effectBrightness,
+																 GetBValue(randomArray[colorIndex])*g_effectBrightness);
 			}
-			g_ChromaSDKImpl.CreateHeadsetEffectImpl(ChromaSDK::Headset::CHROMA_CUSTOM, &HeadsetEffect, NULL);
+			g_ChromaSDKImpl.CreateHeadsetEffectImpl(ChromaSDK::Headset::CHROMA_CUSTOM, &headsetFrames[m_currFrameNum - 1], NULL);
 		}
 		else if (ChromaSystemComponent::chromaDeviceType == 4) {
-			ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE KeypadEffect = {};
+			//ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE KeypadEffect = {};
 
 			for (UINT r = 0; r < ChromaSDK::Keypad::MAX_ROW; r++)
 			{
 				for (UINT c = 0; c < ChromaSDK::Keypad::MAX_COLUMN; c++)
 				{
 					colorIndex = g.Rand32() % arraySize;
-					KeypadEffect.Color[r][c] = rainbowArray[colorIndex];
+					keypadFrames[m_currFrameNum - 1].Color[r][c] = RGB(GetRValue(randomArray[colorIndex])*g_effectBrightness,
+																	   GetGValue(randomArray[colorIndex])*g_effectBrightness,
+																	   GetBValue(randomArray[colorIndex])*g_effectBrightness);
 				}
 			}
-			g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_CUSTOM, &KeypadEffect, NULL);
+			g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_CUSTOM, &keypadFrames[m_currFrameNum - 1], NULL);
 		}
 		else if (ChromaSystemComponent::chromaDeviceType == 5) {
-			ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE ChromaLinkEffect = {};
+			//ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE ChromaLinkEffect = {};
 
 			for (UINT r = 0; r < ChromaSDK::ChromaLink::MAX_LEDS; r++)
 			{
 				colorIndex = g.Rand32() % arraySize;
-				ChromaLinkEffect.Color[r] = rainbowArray[colorIndex];
+				chromalinkFrames[m_currFrameNum - 1].Color[r] = RGB(GetRValue(randomArray[colorIndex])*g_effectBrightness,
+																	GetGValue(randomArray[colorIndex])*g_effectBrightness,
+																	GetBValue(randomArray[colorIndex])*g_effectBrightness);
 			}
-			g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_CUSTOM, &ChromaLinkEffect, NULL);
+			g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_CUSTOM, &chromalinkFrames[m_currFrameNum - 1], NULL);
 		}
 
 	}
@@ -920,7 +937,12 @@ namespace Chroma
 				QImage image = pixmap.toImage();
 
 				// For testing purposes
-				image.save("LumberyardChromaImageOutput/Frame0.png");
+				QString newImageDir = QDir::currentPath() + QDir::separator() + "ChromaImageOutput/Frame0.png";
+				//if (QDir().mkdir("Gems2")) {
+				if (!image.save(newImageDir)) {
+					CryLog("Image file save failed! ");
+				}
+				//}
 
 				for (UINT r = 0; r < ChromaSDK::Keyboard::MAX_ROW; r++)
 				{
@@ -983,9 +1005,10 @@ namespace Chroma
 				if (!image.isNull())
 				{
 					// For testing purposes
+					QString newImageDir = QDir::currentPath() + QDir::separator() + "ChromaImageOutput/";
 					switch (frameIndex) {
 					case 0:
-						image.save(_T("LumberyardChromaImageOutput/GIFFrame0.png")); break;
+						image.save(_T(newImageDir + "GIFFrame0.png")); break;
 					case 5:
 						image.save(_T("LumberyardChromaImageOutput/GIFFrame5.png")); break;
 					case 10:
@@ -1009,6 +1032,7 @@ namespace Chroma
 						}
 					}
 					g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM, &keyboardFrames[m_currFrameNum - 1], NULL);
+					
 					m_currFrameNum++;
 					if (m_currFrameNum > maxFrame[0])
 						maxFrame[0] = m_currFrameNum;
@@ -1020,13 +1044,18 @@ namespace Chroma
 			QMessageBox::information(0, _T("Invalid Device"), _T("Please change device type to keyboard for importing an image file."));
 			return AZ::Edit::PropertyRefreshLevels::ValuesOnly;
 		}
+
+		m_currFrameNum = 1;
+		newFrame = maxFrame[0];
+
 		return AZ::Edit::PropertyRefreshLevels::ValuesOnly;
 	}
 
 	void ChromaSystemComponent::SetKey() {
 		// Only used for keyboard
 		if (ChromaSystemComponent::chromaDeviceType == 0) {
-			keyboardFrames[m_currFrameNum-1].Key[HIBYTE(ChromaKey)][LOBYTE(ChromaKey)] = 0x01000000 | GetCOLORREFValue(ChromaColor, g_effectBrightness);
+			//keyboardFrames[m_currFrameNum-1].Key[HIBYTE(ChromaKey)][LOBYTE(ChromaKey)] = 0x01000000 | GetCOLORREFValue(ChromaColor, g_effectBrightness);
+			keyboardFrames[m_currFrameNum - 1].Color[HIBYTE(ChromaKey)][LOBYTE(ChromaKey)] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 			g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], NULL);
 		}
 	}
@@ -1080,13 +1109,32 @@ namespace Chroma
 		if (ChromaSystemComponent::chromaDeviceType == 0) {
 			for (UINT c = 0; c < ChromaSDK::Keyboard::MAX_COLUMN; c++)
 			{
+				if (cRow == 0 && c == 20)
+					continue;
+
 				keyboardFrames[m_currFrameNum - 1].Color[cRow-1][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 			}
 
 			g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], NULL);
 		}
+		else if (ChromaSystemComponent::chromaDeviceType == 1) {
+			for (UINT c = 0; c < ChromaSDK::Mouse::MAX_COLUMN; c++)
+			{
+				mouseFrames[m_currFrameNum - 1].Color[cRow - 1][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+			}
+
+			g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_CUSTOM2, &mouseFrames[m_currFrameNum - 1], NULL);
+		}
+		else if (ChromaSystemComponent::chromaDeviceType == 4) {
+			for (UINT c = 0; c < ChromaSDK::Keypad::MAX_COLUMN; c++)
+			{
+				keypadFrames[m_currFrameNum - 1].Color[cRow - 1][c] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+			}
+
+			g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_CUSTOM, &keypadFrames[m_currFrameNum - 1], NULL);
+		}
 		else {
-			QMessageBox::information(0, _T("Invalid Device"), _T("Cannot Paint Row on Non-Keyboard Device"));
+			QMessageBox::information(0, _T("Invalid Device"), _T("Can only paint rows on keyboards, keypads, and mice devices"));
 		}
 	}
 
@@ -1094,13 +1142,32 @@ namespace Chroma
 		if (ChromaSystemComponent::chromaDeviceType == 0) {
 			for (UINT r = 0; r < ChromaSDK::Keyboard::MAX_ROW; r++)
 			{
+				if (r == 0 && cCol == 20)
+					continue;
+
 				keyboardFrames[m_currFrameNum - 1].Color[r][cCol-1] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
 			}
 
 			g_ChromaSDKImpl.CreateKeyboardEffectImpl(ChromaSDK::Keyboard::CHROMA_CUSTOM_KEY, &keyboardFrames[m_currFrameNum - 1], NULL);
 		}
+		else if (ChromaSystemComponent::chromaDeviceType == 1) {
+			for (UINT r = 0; r < ChromaSDK::Mouse::MAX_ROW; r++)
+			{
+				mouseFrames[m_currFrameNum - 1].Color[r][cCol - 1] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+			}
+
+			g_ChromaSDKImpl.CreateMouseEffectImpl(ChromaSDK::Mouse::CHROMA_CUSTOM2, &mouseFrames[m_currFrameNum - 1], NULL);
+		}
+		else if (ChromaSystemComponent::chromaDeviceType == 4) {
+			for (UINT r = 0; r < ChromaSDK::Keypad::MAX_ROW; r++)
+			{
+				keypadFrames[m_currFrameNum - 1].Color[r][cCol - 1] = GetCOLORREFValue(ChromaColor, g_effectBrightness);
+			}
+
+			g_ChromaSDKImpl.CreateKeypadEffectImpl(ChromaSDK::Keypad::CHROMA_CUSTOM, &keypadFrames[m_currFrameNum - 1], NULL);
+		}
 		else {
-			QMessageBox::information(0, _T("Invalid Device"), _T("Cannot Paint Column on Non-Keyboard Device"));
+			QMessageBox::information(0, _T("Invalid Device"), _T("Can only paint columns on keyboards, keypads, and mice devices"));
 		}
 	}
 
@@ -1361,7 +1428,7 @@ namespace Chroma
 		if (m_currFrameNum == MAXFRAMES)
 			return m_currFrameNum;
 		else if (m_currFrameNum > MAXFRAMES) {
-			m_currFrameNum = 100;
+			m_currFrameNum = MAXFRAMES;
 			return AZ::Edit::PropertyRefreshLevels::ValuesOnly;
 		}
 		
@@ -1585,6 +1652,329 @@ namespace Chroma
 		else if (ChromaSystemComponent::chromaDeviceType == 5) {
 			g_ChromaSDKImpl.CreateChromaLinkEffectImpl(ChromaSDK::ChromaLink::CHROMA_CUSTOM, &chromalinkFrames[frame-1], NULL);
 		}
+	}
+
+	AZ::Crc32 ChromaSystemComponent::ImportChromaEffect() {
+		enum EChromaSDKDeviceTypeEnum
+		{
+			DE_1D = 0,
+			DE_2D,
+		};
+
+		enum EChromaSDKDevice1DEnum
+		{
+			DE_ChromaLink = 0,
+			DE_Headset,
+			DE_Mousepad,
+		};
+
+		enum EChromaSDKDevice2DEnum
+		{
+			DE_Keyboard = 0,
+			DE_Keypad,
+			DE_Mouse,
+		};
+
+		QString chromaFilePath = QFileDialog::getOpenFileName(nullptr, "Import Chroma Effect", QString(), "Filter Files (*.chroma)");
+
+		QFile chromaFile(chromaFilePath);
+
+		if (chromaFile.open(QFile::ReadOnly | QFile::Text))
+		{
+			if (chromaFile.isTextModeEnabled()) {
+				QDataStream inSteam(&chromaFile);
+
+				// Read the Effect File Animation Version
+				int version = ANIMATION_VERSION;
+				inSteam.readRawData(reinterpret_cast<char*>(&version), sizeof(version));
+				if (version != 1)
+					CryLog("Imported Invalid Animation Version %d", version);
+
+				// Read the Effect File Device Type
+				qint8 deviceType = 0;
+				qint8 device = 0;
+
+				// Read the Effect File DeviceType and Device
+				inSteam.readRawData(reinterpret_cast<char*>(&deviceType), sizeof(deviceType));
+				inSteam.readRawData(reinterpret_cast<char*>(&device), sizeof(device));
+
+				if (deviceType == (qint8)DE_1D) {
+					if (device == EChromaSDKDevice1DEnum::DE_Mousepad) {
+						ChromaSystemComponent::chromaDeviceType = 2;
+					}
+					else if (device == EChromaSDKDevice1DEnum::DE_Headset) {
+						ChromaSystemComponent::chromaDeviceType = 3;
+					}
+					else if (device == EChromaSDKDevice1DEnum::DE_ChromaLink) {
+						ChromaSystemComponent::chromaDeviceType = 5;
+					}
+				}
+				else {
+					if (device == EChromaSDKDevice2DEnum::DE_Keyboard) {
+						ChromaSystemComponent::chromaDeviceType = 0;
+					}
+					else if (device == EChromaSDKDevice2DEnum::DE_Mouse) {
+						ChromaSystemComponent::chromaDeviceType = 1;
+					}
+					else if (device == EChromaSDKDevice2DEnum::DE_Keypad) {
+						ChromaSystemComponent::chromaDeviceType = 4;
+					}
+				}
+
+				// Read the Effect File FrameCount
+				UINT frameCount = 0;
+				inSteam.readRawData(reinterpret_cast<char*>(&frameCount), sizeof(frameCount));
+				maxFrame[ChromaSystemComponent::chromaDeviceType] = frameCount;
+
+				// Read the Effect File Duration
+				float duration = 0.0;
+
+				// Read the Effect Colors
+				int color = 0;
+				for (int f = 0; f < maxFrame[ChromaSystemComponent::chromaDeviceType]; f++) {
+
+					inSteam.readRawData(reinterpret_cast<char*>(&duration), sizeof(duration));
+					g_effectSpeed = duration * 1000.0f;
+
+					if (ChromaSystemComponent::chromaDeviceType == 0) {
+						for (UINT r = 0; r < ChromaSDK::Keyboard::MAX_ROW; r++)
+						{
+							for (UINT c = 0; c < ChromaSDK::Keyboard::MAX_COLUMN; c++)
+							{
+								inSteam.readRawData(reinterpret_cast<char*>(&color), sizeof(color));
+								
+								if (color != 0)
+									CryLog("Import Effect: Row = %d | Col = %d | Color = %d", r, c, color);
+
+								keyboardFrames[f].Color[r][c] = color;
+							}
+						}
+					}
+					else if (ChromaSystemComponent::chromaDeviceType == 1) {
+						for (UINT r = 0; r < ChromaSDK::Mouse::MAX_ROW; r++)
+						{
+							for (UINT c = 0; c < ChromaSDK::Mouse::MAX_COLUMN; c++)
+							{
+								inSteam.readRawData(reinterpret_cast<char*>(&color), sizeof(color));
+
+								if (color != 0)
+									CryLog("Import Effect: Row = %d | Col = %d | Color = %d", r, c, color);
+
+								mouseFrames[f].Color[r][c] = color;
+							}
+						}
+					}
+					else if (ChromaSystemComponent::chromaDeviceType == 2) {
+						for (UINT c = 0; c < ChromaSDK::Mousepad::MAX_LEDS; c++)
+						{
+							inSteam.readRawData(reinterpret_cast<char*>(&color), sizeof(color));
+
+							if (color != 0)
+								CryLog("Import Effect: LED = %d | Color = %d", c, color);
+
+							mousepadFrames[f].Color[c] = color;
+						}
+					}
+					else if (ChromaSystemComponent::chromaDeviceType == 3) {
+						for (UINT c = 0; c < ChromaSDK::Headset::MAX_LEDS; c++)
+						{
+							inSteam.readRawData(reinterpret_cast<char*>(&color), sizeof(color));
+
+							if (color != 0)
+								CryLog("Import Effect: LED = %d | Color = %d", c, color);
+
+							headsetFrames[f].Color[c] = color;
+						}
+					}
+					else if (ChromaSystemComponent::chromaDeviceType == 4) {
+						for (UINT r = 0; r < ChromaSDK::Keypad::MAX_ROW; r++)
+						{
+							for (UINT c = 0; c < ChromaSDK::Keypad::MAX_COLUMN; c++)
+							{
+								inSteam.readRawData(reinterpret_cast<char*>(&color), sizeof(color));
+
+								if (color != 0)
+									CryLog("Import Effect: Row = %d | Col = %d | Color = %d", r, c, color);
+
+								keypadFrames[f].Color[r][c] = color;
+							}
+						}
+					}
+					else if (ChromaSystemComponent::chromaDeviceType == 5) {
+						for (UINT c = 0; c < ChromaSDK::ChromaLink::MAX_LEDS; c++)
+						{
+							inSteam.readRawData(reinterpret_cast<char*>(&color), sizeof(color));
+
+							if (color != 0)
+								CryLog("Import Effect: LED = %d | Color = %d", c, color);
+
+							chromalinkFrames[f].Color[c] = color;
+						}
+					}
+				}
+			}
+		}
+
+		chromaFile.close();
+		m_currFrameNum = 1;
+		newFrame = maxFrame[ChromaSystemComponent::chromaDeviceType];
+		ShowFrame(m_currFrameNum);
+
+		return AZ::Edit::PropertyRefreshLevels::ValuesOnly;
+	}
+
+	void ChromaSystemComponent::ExportChromaEffect() {
+		enum EChromaSDKDeviceTypeEnum
+		{
+			DE_1D = 0,
+			DE_2D,
+		};
+
+		enum EChromaSDKDevice1DEnum
+		{
+			DE_ChromaLink = 0,
+			DE_Headset,
+			DE_Mousepad,
+		};
+
+		enum EChromaSDKDevice2DEnum
+		{
+			DE_Keyboard = 0,
+			DE_Keypad,
+			DE_Mouse,
+		};
+
+		QString chromaFilePath = QFileDialog::getSaveFileName(nullptr, "Save Chroma Effect", QString(), "Filter Files (*.chroma)");
+		//QString chromaFilePath = QDir::cleanPath(QDir::currentPath() + QDir::separator() + "ChromaEffectFiles/lumberyardTest3.chroma");
+
+		QFile chromaFile(chromaFilePath);
+
+		if (chromaFile.open(QFile::WriteOnly | QFile::Text))
+		{
+			if (chromaFile.isTextModeEnabled()) {
+				//chromaFile.write("Hello Chroma File!");
+
+				QDataStream outStream(&chromaFile);
+
+				// Write the Effect File Animation Version
+				int version = ANIMATION_VERSION;
+				outStream.writeRawData(reinterpret_cast<const char*>(&version), sizeof(version));
+
+				// Write the Effect File Device Type
+				qint8 deviceType = 0;
+				qint8 device = 0;
+				if (ChromaSystemComponent::chromaDeviceType == 0) {
+					deviceType = (qint8)EChromaSDKDeviceTypeEnum::DE_2D;
+					device = (qint8)EChromaSDKDevice2DEnum::DE_Keyboard;
+				}
+				else if (ChromaSystemComponent::chromaDeviceType == 1) {
+					deviceType = (qint8)EChromaSDKDeviceTypeEnum::DE_2D;
+					device = (qint8)EChromaSDKDevice2DEnum::DE_Mouse;
+				}
+				else if (ChromaSystemComponent::chromaDeviceType == 4) {
+					deviceType = (qint8)EChromaSDKDeviceTypeEnum::DE_2D;
+					device = (qint8)EChromaSDKDevice2DEnum::DE_Keypad;
+				}
+				else if (ChromaSystemComponent::chromaDeviceType == 2) {
+					deviceType = (qint8)EChromaSDKDeviceTypeEnum::DE_1D;
+					device = (qint8)EChromaSDKDevice1DEnum::DE_Mousepad;
+				}
+				else if (ChromaSystemComponent::chromaDeviceType == 3) {
+					deviceType = (qint8)EChromaSDKDeviceTypeEnum::DE_1D;
+					device = (qint8)EChromaSDKDevice1DEnum::DE_Headset;
+				}
+				else if (ChromaSystemComponent::chromaDeviceType == 5) {
+					deviceType = (qint8)EChromaSDKDeviceTypeEnum::DE_1D;
+					device = (qint8)EChromaSDKDevice1DEnum::DE_ChromaLink;
+				}
+
+				// Write the Effect File DeviceType and Device
+				//outStream << deviceType << device;
+				outStream.writeRawData(reinterpret_cast<const char*>(&deviceType), sizeof(deviceType));
+				outStream.writeRawData(reinterpret_cast<const char*>(&device), sizeof(device));
+
+				// Write the Effect File FrameCount
+				UINT frameCount = maxFrame[ChromaSystemComponent::chromaDeviceType];
+				outStream.writeRawData(reinterpret_cast<const char*>(&frameCount), sizeof(frameCount));
+
+				// Write the Effect File Duration
+				// Compute the duration as the (frameCount-1)*frameDelay
+				float duration = (float)(g_effectSpeed / 1000.0f);
+
+				// Write the Effect Colors
+				int color = 0;
+				for (int f = 0; f < maxFrame[ChromaSystemComponent::chromaDeviceType]; f++) {
+
+					outStream.writeRawData(reinterpret_cast<const char*>(&duration), sizeof(duration));
+
+					if (ChromaSystemComponent::chromaDeviceType == 0) {
+						for (UINT r = 0; r < ChromaSDK::Keyboard::MAX_ROW; r++)
+						{
+							for (UINT c = 0; c < ChromaSDK::Keyboard::MAX_COLUMN; c++)
+							{
+								color = keyboardFrames[f].Color[r][c];
+								if (color != 0)
+									CryLog("Export Effect: Row = %d | Col = %d | Color = %d", r, c, color);
+								outStream.writeRawData(reinterpret_cast<const char*>(&color), sizeof(color));
+							}
+						}
+					}
+					else if (ChromaSystemComponent::chromaDeviceType == 1) {
+						for (UINT r = 0; r < ChromaSDK::Mouse::MAX_ROW; r++)
+						{
+							for (UINT c = 0; c < ChromaSDK::Mouse::MAX_COLUMN; c++)
+							{
+								color = mouseFrames[f].Color[r][c];
+								if (color != 0)
+									CryLog("Export Effect: Row = %d | Col = %d | Color = %d", r, c, color);
+								outStream.writeRawData(reinterpret_cast<const char*>(&color), sizeof(color));
+							}
+						}
+					}
+					else if (ChromaSystemComponent::chromaDeviceType == 2) {
+						for (UINT c = 0; c < ChromaSDK::Mousepad::MAX_LEDS; c++)
+						{
+							color = mousepadFrames[f].Color[c];
+							if (color != 0)
+								CryLog("Export Effect: LED = %d | Color = %d", c, color);
+							outStream.writeRawData(reinterpret_cast<const char*>(&color), sizeof(color));
+						}
+					}
+					else if (ChromaSystemComponent::chromaDeviceType == 3) {
+						for (UINT c = 0; c < ChromaSDK::Headset::MAX_LEDS; c++)
+						{
+							color = headsetFrames[f].Color[c];
+							if (color != 0)
+								CryLog("Export Effect: LED = %d | Color = %d", c, color);
+							outStream.writeRawData(reinterpret_cast<const char*>(&color), sizeof(color));
+						}
+					}
+					else if (ChromaSystemComponent::chromaDeviceType == 4) {
+						for (UINT r = 0; r < ChromaSDK::Keypad::MAX_ROW; r++)
+						{
+							for (UINT c = 0; c < ChromaSDK::Keypad::MAX_COLUMN; c++)
+							{
+								color = keypadFrames[f].Color[r][c];
+								if (color != 0)
+									CryLog("Export Effect: Row = %d | Col = %d | Color = %d", r, c, color);
+								outStream.writeRawData(reinterpret_cast<const char*>(&color), sizeof(color));
+							}
+						}
+					}
+					else if (ChromaSystemComponent::chromaDeviceType == 5) {
+						for (UINT c = 0; c < ChromaSDK::ChromaLink::MAX_LEDS; c++)
+						{
+							color = chromalinkFrames[f].Color[c];
+							if (color != 0)
+								CryLog("Export Effect: LED = %d | Color = %d", c, color);
+							outStream.writeRawData(reinterpret_cast<const char*>(&color), sizeof(color));
+						}
+					}
+				}
+			}
+		}
+
+		chromaFile.close();
 	}
 }
 

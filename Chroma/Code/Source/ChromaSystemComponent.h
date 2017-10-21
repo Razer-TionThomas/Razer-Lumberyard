@@ -8,7 +8,7 @@
 
 #include "ChromaSDKImpl.h"
 
-#define MAXFRAMES 100
+#define MAXFRAMES 200
 #define MAXDEVICES 6
 
 namespace Chroma
@@ -35,11 +35,10 @@ namespace Chroma
 
 		enum ChromaEffectValue
 		{
-			STATIC = 0,
-			FLASH,
+			RANDOM = 0,
 			WAVE,
 			BREATHING,
-			RANDOM
+			RAINBOW			
 		};
 
 		enum ChromaLEDs
@@ -131,7 +130,7 @@ namespace Chroma
 		// Jump to Frame
 		AZ::u32 newFrame = 1;
 
-		// Set Max Frame (<100)
+		// Set Max Frame (<MAXFRAMES)
 		AZ::u32 maxFrame[MAXDEVICES] = { 1 };
 
 		// Select row to color
@@ -159,12 +158,12 @@ namespace Chroma
 		int m_currFrameNum;
 
 		// List of Frames for Custom Animations
-		ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE keyboardFrames[100] = {};
-		ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE keypadFrames[100] = {};
-		ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE2 mouseFrames[100] = {};
-		ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE mousepadFrames[100] = {};
-		ChromaSDK::Headset::CUSTOM_EFFECT_TYPE headsetFrames[100] = {};
-		ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE chromalinkFrames[100] = {};
+		ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE keyboardFrames[MAXFRAMES] = {};
+		ChromaSDK::Keypad::CUSTOM_EFFECT_TYPE keypadFrames[MAXFRAMES] = {};
+		ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE2 mouseFrames[MAXFRAMES] = {};
+		ChromaSDK::Mousepad::CUSTOM_EFFECT_TYPE mousepadFrames[MAXFRAMES] = {};
+		ChromaSDK::Headset::CUSTOM_EFFECT_TYPE headsetFrames[MAXFRAMES] = {};
+		ChromaSDK::ChromaLink::CUSTOM_EFFECT_TYPE chromalinkFrames[MAXFRAMES] = {};
 
 		// Mouse Custom Effect LEDs
 		int chromaMouseLEDs[ChromaSDK::Mouse::MAX_LEDS2] = { ChromaSDK::Mouse::RZLED2::RZLED2_BACKLIGHT, ChromaSDK::Mouse::RZLED2::RZLED2_BOTTOM1, ChromaSDK::Mouse::RZLED2::RZLED2_BOTTOM2,
@@ -202,6 +201,8 @@ namespace Chroma
 		bool fillFrame;
 		bool clearFrames;
 		bool playAllCustomEffect;
+		bool exportEffect;
+		bool importEffect;
 
 		// Repeat Checkbox Variable
 		bool repeatAnimation;
@@ -210,13 +211,12 @@ namespace Chroma
 		void SetEffectBrightness();
 		void SetEffectSpeed();
 		void ClearEffects();
-		void ShowFlashEffect();
 		void ShowRandomEffect();
 		void ShowWaveEffect();
 		void ShowBreathingEffect();
-		void ShowStaticEffect();
-		AZ::Crc32 SetChromaDeviceType(AZ::u32 deviceType);
-		void SetEffectColor(AZ::Color color);
+		void ShowRainbowEffect();
+		AZ::Crc32 SetChromaDeviceType();
+		void SetEffectColor();
 		void LoadSingleImage();
 		AZ::Crc32 LoadAnimation();
 		bool ReadImageFile();
@@ -238,6 +238,8 @@ namespace Chroma
 		void PasteFrame();
 		void FillFrame();
 		void PlayAllCustomAnimation();
+		void ExportChromaEffect();
+		AZ::Crc32 ImportChromaEffect();
 
     };
 }
