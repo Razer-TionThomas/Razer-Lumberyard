@@ -51,19 +51,29 @@ C:\Amazon\Lumberyard\1.9.0.1\dev\Gems
 
 
 ## Usage
-See video overview on how to use the Chroma GEM component in the Lumberyard editor: [Chroma Gem Video Tutorial][chroma-vids] 
+See video overview on how to use the Chroma GEM component in the Lumberyard editor: [Chroma Gem Video Tutorials][chroma-vids] 
 
+Tutorial Videos are categoried by major releases as follows:
+[9-16 Update] **Chroma Gem Setup** - tutorial on how to setup the Chroma Gem in the project configurator, enable it, and bring up the Chroma UI in the Lumberyard editor
+[9-16 Update] **Chroma Gem Menu Overview** - tutorial that provides a step by step overview of the components in the Chroma Gem UI
+[9-16 Update] **Chroma Gem Pong Example** - tutorial video that demonstrates a simple pong game animation on the keyboard as an example of how to use the features in the Chroma editor UI
+
+[9-28 Update] **Chroma Gem Image Import** - tutorial video that demonstrates how to import images (.jpg, .bmp, .png) and animations (.gif) into the Chroma editor UI and render the image as a keyboard effect
+[9-28 Update] **Chroma Gem Custom LED** - tutorial video that explains how to use the custom LED feature to set colors to individual LEDs on non-keyboard devices
+[9-28 Update] **Chroma Gem Play All Devices** - tutorial video that demonstrates how to play a *composite* effect across all devices simultaneously
+
+[10-20 Update] **Chroma Gem Effect File Import/Export** - tutorial video that demonstrates how save an animation into an effect file (.chroma) and how to import effect files into the Lumberyard Editor
 
 
 ## Todo
 - Fix image import feature to use QFileDialog instead of CFileDialog (Completed in 9/28 update)
 - Add support for composite effect across all devices (Completed in 9/28 update)
-- Add support to save effects into .chroma file format for cross engine support
-- Add more support for ebus events for triggering effects
-- Create deplyable sample project using scripts to communicate with Chroma GEM
-- Integrate CChromaEditor native plugin
-- Add visual grid overlay for easier custom key/led (May just use native plugin integration)
-- Add curve editor to modify effect timings (May just use native plugin integration)
+- Add support to save effects into .chroma file format for cross engine support (Completed in 10/20 update)
+- Add more support for ebus events for triggering effects (Will add support for Lumberyard version 1.11 scripting)
+- Create deplyable sample project using scripts to communicate with Chroma GEM (Will add in Lumberyard version 1.11)
+- Integrate CChromaEditor native plugin (Completed in 10/20 update)
+- Add visual grid overlay for easier custom key/led (Added compatibility with CChromaEditor in 10/20 update)
+- Add curve editor to modify effect timings (Added compatibility with CChromaEditor in 10/20 update. May add in Lumberyard natively in future update)
 
 [//]: #
 [lmbtut]: https://gamedev.amazon.com/forums/tutorials
