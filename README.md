@@ -54,15 +54,15 @@ C:\Amazon\Lumberyard\1.9.0.1\dev\Gems
 See video overview on how to use the Chroma GEM component in the Lumberyard editor: [Chroma Gem Video Tutorials][chroma-vids] 
 
 Tutorial Videos are categoried by major releases as follows:
-[9-16 Update] **Chroma Gem Setup** - tutorial on how to setup the Chroma Gem in the project configurator, enable it, and bring up the Chroma UI in the Lumberyard editor
-[9-16 Update] **Chroma Gem Menu Overview** - tutorial that provides a step by step overview of the components in the Chroma Gem UI
-[9-16 Update] **Chroma Gem Pong Example** - tutorial video that demonstrates a simple pong game animation on the keyboard as an example of how to use the features in the Chroma editor UI
+- [9-16 Update] **Chroma Gem Setup** - tutorial on how to setup the Chroma Gem in the project configurator, enable it, and bring up the Chroma UI in the Lumberyard editor
+- [9-16 Update] **Chroma Gem Menu Overview** - tutorial that provides a step by step overview of the components in the Chroma Gem UI
+- [9-16 Update] **Chroma Gem Pong Example** - tutorial video that demonstrates a simple pong game animation on the keyboard as an example of how to use the features in the Chroma editor UI
 
-[9-28 Update] **Chroma Gem Image Import** - tutorial video that demonstrates how to import images (.jpg, .bmp, .png) and animations (.gif) into the Chroma editor UI and render the image as a keyboard effect
-[9-28 Update] **Chroma Gem Custom LED** - tutorial video that explains how to use the custom LED feature to set colors to individual LEDs on non-keyboard devices
-[9-28 Update] **Chroma Gem Play All Devices** - tutorial video that demonstrates how to play a *composite* effect across all devices simultaneously
+- [9-28 Update] **Chroma Gem Image Import** - tutorial video that demonstrates how to import images (.jpg, .bmp, .png) and animations (.gif) into the Chroma editor UI and render the image as a keyboard effect
+- [9-28 Update] **Chroma Gem Custom LED** - tutorial video that explains how to use the custom LED feature to set colors to individual LEDs on non-keyboard devices
+- [9-28 Update] **Chroma Gem Play All Devices** - tutorial video that demonstrates how to play a *composite* effect across all devices simultaneously
 
-[10-20 Update] **Chroma Gem Effect File Import/Export** - tutorial video that demonstrates how save an animation into an effect file (.chroma) and how to import effect files into the Lumberyard Editor
+- [10-20 Update] **Chroma Gem Effect File Import/Export** - tutorial video that demonstrates how save an animation into an effect file (.chroma) and how to import effect files into the Lumberyard Editor
 
 
 ## Todo
