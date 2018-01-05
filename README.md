@@ -64,12 +64,13 @@ Tutorial Videos are categoried by major releases as follows:
 
 - [10-20 Update] **Chroma Gem Effect File Import/Export** - tutorial video that demonstrates how save an animation into an effect file (.chroma) and how to import effect files into the Lumberyard Editor
 
+- [1-4-2018 Update] **Chroma Gem Runtime Preset Effect ** - example video shows Chroma animation integrated into Scripting sample level using Lua script triggers  
 
 ## Todo
 - Fix image import feature to use QFileDialog instead of CFileDialog (Completed in 9/28 update)
 - Add support for composite effect across all devices (Completed in 9/28 update)
 - Add support to save effects into .chroma file format for cross engine support (Completed in 10/20 update)
-- Add more support for ebus events for triggering effects (Will add support for Lumberyard version 1.11 scripting)
+- Add more support for ebus events for triggering effects (Completed in 1/4/18 Update)
 - Create deplyable sample project using scripts to communicate with Chroma GEM (Will add in Lumberyard version 1.11)
 - Integrate CChromaEditor native plugin (Completed in 10/20 update)
 - Add visual grid overlay for easier custom key/led (Added compatibility with CChromaEditor in 10/20 update)
