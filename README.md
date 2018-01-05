@@ -64,7 +64,7 @@ Tutorial Videos are categoried by major releases as follows:
 
 - [10-20 Update] **Chroma Gem Effect File Import/Export** - tutorial video that demonstrates how save an animation into an effect file (.chroma) and how to import effect files into the Lumberyard Editor
 
-- [1-4-2018 Update] **Chroma Gem Runtime Preset Effect ** - example video shows Chroma animation integrated into Scripting sample level using Lua script triggers  
+- [1-4-2018 Update] **Chroma Gem Runtime Preset Effect** - example video shows Chroma animation integrated into Scripting sample level using Lua script triggers  
 
 ## Todo
 - Fix image import feature to use QFileDialog instead of CFileDialog (Completed in 9/28 update)
