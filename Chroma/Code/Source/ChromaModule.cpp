@@ -3,12 +3,13 @@
 #include <platform_impl.h>
 #include <AzCore/Component/ComponentApplicationBus.h>
 
-#if CHROMA_EDITOR
 #include "ChromaSystemComponent.h"
+
+#if defined (CHROMA_EDITOR)
+#include "ChromaEditorSystemComponent.h"
 #endif
 
 #include <IGem.h>
-//#include <FlowSystem/Nodes/FlowBaseNode.h>
 
 namespace Chroma
 {
@@ -16,8 +17,6 @@ namespace Chroma
         : public CryHooksModule
     {
     public:
-
-
         AZ_RTTI(ChromaModule, "{562255E1-BFDA-41A9-B78A-CBE9CC80C321}", CryHooksModule);
 
         ChromaModule()
@@ -25,12 +24,13 @@ namespace Chroma
         {
             // Push results of [MyComponent]::CreateDescriptor() into m_descriptors here.
             m_descriptors.insert(m_descriptors.end(), {
-#if CHROMA_EDITOR
-                ChromaSystemComponent::CreateDescriptor(),
+
+				Chroma::ChromaSystemComponent::CreateDescriptor(),
+
+#if defined(CHROMA_EDITOR)
+                Chroma::ChromaEditorSystemComponent::CreateDescriptor(),
 #endif
             });
-
-			//EBUS_EVENT(AZ::ComponentApplicationBus, RegisterComponentDescriptor, ChromaSystemComponent::CreateDescriptor());
         }
 
         /**
@@ -39,39 +39,15 @@ namespace Chroma
         AZ::ComponentTypeList GetRequiredSystemComponents() const override
         {
             return AZ::ComponentTypeList{
-#if CHROMA_EDITOR
-                azrtti_typeid<ChromaSystemComponent>(),
+//#ifndef CHROMA_EDITOR
+				azrtti_typeid<ChromaSystemComponent>(),
+//#endif
+
+#if defined(CHROMA_EDITOR)
+                azrtti_typeid<ChromaEditorSystemComponent>(),
 #endif
             };
         }
-
-		void OnSystemEvent(ESystemEvent event, UINT_PTR wparam, UINT_PTR lparam) override {
-			//switch (event)
-			//{
-			//case ESYSTEM_EVENT_FLOW_SYSTEM_REGISTER_EXTERNAL_NODES:
-			////	RegisterExternalFlowNodes();
-			//	break;
-
-			//case ESYSTEM_EVENT_GAME_POST_INIT:
-			//	IComponentFactoryRegistry::RegisterAllComponentFactoryNodes(*gEnv->pEntitySystem->GetComponentFactoryRegistry());
-			//	PostGameInit();
-			//	break;
-
-			//case ESYSTEM_EVENT_FULL_SHUTDOWN:
-			//case ESYSTEM_EVENT_FAST_SHUTDOWN:
-			//	// Put your shutdown code here
-			//	// Other Gems may have been shutdown already, but none will have destructed
-			//	break;
-			//}
-		}
-
-		/*void PostGameInit() {
-			IEntityClassRegistry::SEntityClassDesc clsDesc;
-			clsDesc.sName = "Chroma";
-			clsDesc.sScriptFile = "Scripts/Entities/Device_Lighting/Chroma.lua";
-			static CChromaCreator _creator;
-			GetISystem()->GetIGame()->GetIGameFramework()->GetIGameObjectSystem()->RegisterExtension("Chroma", &_creator, &clsDesc);
-		}*/
     };
 }
 

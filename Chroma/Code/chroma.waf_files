@@ -7,11 +7,20 @@
     },
     "auto": {
         "Include": [
-            "Include/Chroma/ChromaBus.h"
+          "Include/Chroma/ChromaBus.h",
+          "Include/Chroma/RzChromaSDKDefines.h",
+          "Include/Chroma/RzChromaSDKTypes.h",
+          "Include/Chroma/RzErrors.h"
         ],
-        "Source": [
-            "Source/ChromaModule.cpp"
-        ]
+      "Source": [
+        "Source/ChromaModule.cpp",
+        "Source/ChromaSDKImpl.h",
+        "Source/ChromaSDKImpl.cpp",
+        "Source/FrameController.h",
+        "Source/FrameController.cpp",
+        "Source/ChromaSystemComponent.cpp",
+        "Source/ChromaSystemComponent.h"
+      ]
     }
 }
 

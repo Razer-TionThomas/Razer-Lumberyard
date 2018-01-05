@@ -3,8 +3,7 @@
 #include <AzCore/Component/Component.h>
 #include <Chroma/ChromaBus.h>
 #include <AzCore/Component/TickBus.h>
-#include "C:\Amazon\Lumberyard\1.9.0.1\dev\Code\CryEngine\CryAction\IGameObject.h"
-#include <CrySystemBus.h> // For calendar demo
+#include <AzCore/Math/Color.h>
 
 #include "ChromaSDKImpl.h"
 
@@ -36,9 +35,15 @@ namespace Chroma
 		enum ChromaEffectValue
 		{
 			RANDOM = 0,
-			WAVE,
+			FLASH,
+			WAVELR1,
+			WATERFALL,
+			WAVECROSS,
 			BREATHING,
-			RAINBOW			
+			RIPPLELR,
+			RIPPLEUD,
+			EXPLOSION,
+			RAINBOW
 		};
 
 		enum ChromaLEDs
@@ -88,8 +93,12 @@ namespace Chroma
         // ChromaRequestBus interface implementation
 		void ChromaSDKInit() override;
 		void ChromaSDKUnInit() override;
-		void PlayChromaEffect() override;
+		void PlayPresetChromaEffect(int effectId, int device, bool repeat ) override;
 		void StopChromaEffect() override;
+		void ClearChromaEffects() override;
+		void SetEffectBrightness(float brightness) override;
+		void SetEffectSpeed(int speed) override;
+		void SetEffectColor(float r, float g, float b, float a) override;
         ////////////////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////////////////
@@ -100,8 +109,6 @@ namespace Chroma
         ////////////////////////////////////////////////////////////////////////
 
 		////////////////////////////////////////////////////////////////////////
-		// CrySystemEventBus
-		void OnCrySystemInitialized(ISystem&, const SSystemInitParams&) override; // For calendar demo
 
 		// TickBus
 		void OnTick(float deltaTime, AZ::ScriptTimePoint time) override;
@@ -111,6 +118,9 @@ namespace Chroma
 		float g_effectBrightness;
 
 		int g_effectSpeed;
+
+		// Repeat Checkbox Variable
+		bool repeatAnimation;
 
 		// Component Color Picker Variable
 		AZ::Color ChromaColor;
@@ -180,66 +190,37 @@ namespace Chroma
 		// Helper Functions
 		COLORREF GetCOLORREFValue(AZ::Color, double brightness);
 
+		ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE GetBlackKBFrame() {
+			// Define Clear Frame
+			RZEFFECTID clearKB = GUID_NULL;
+
+			ChromaSDK::Keyboard::CUSTOM_KEY_EFFECT_TYPE KBClearFrame = {};
+
+			for (UINT c = 0; c < ChromaSDK::Keyboard::MAX_COLUMN; c++)
+			{
+				for (int r = ChromaSDK::Keyboard::MAX_ROW - 1; r >= 0; r--)
+				{
+					KBClearFrame.Color[r][c] = RGB(0, 0, 0);
+				}
+			}
+
+			return KBClearFrame;
+		}
+
 		//CString m_currFileName;
 
-		// Component button variables
-		bool clearEffects;
-		bool stopEffect;
-		bool playPresetEffect;
-		bool playCustomEffect;
-		bool importImage;
-		bool importAnimation;
-		bool setKey;
-		bool setLed;
-		bool nextFrame;
-		bool prevFrame;
-		bool setRow;
-		bool setCol;
-		bool clearFrame;
-		bool copyFrame;
-		bool pasteFrame;
-		bool fillFrame;
-		bool clearFrames;
-		bool playAllCustomEffect;
-		bool exportEffect;
-		bool importEffect;
-
-		// Repeat Checkbox Variable
-		bool repeatAnimation;
-
-		// Entity Inspector Functions
-		void SetEffectBrightness();
-		void SetEffectSpeed();
-		void ClearEffects();
-		void ShowRandomEffect();
-		void ShowWaveEffect();
-		void ShowBreathingEffect();
-		void ShowRainbowEffect();
-		AZ::Crc32 SetChromaDeviceType();
-		void SetEffectColor();
-		void LoadSingleImage();
-		AZ::Crc32 LoadAnimation();
-		bool ReadImageFile();
-		AZ::Crc32 ReadGifAnimationFile();
 		void StopEffect();
-		void PlayPresetEffect();
-		void SetKey();
-		void SetLed();
-		AZ::Crc32 JumpToFrame();
-		AZ::Crc32 IncrementFrame();
-		AZ::Crc32 DecrementFrame();
-		void PaintRow();
-		void PaintCol();
-		void ShowFrame(int frame);
-		void PlayCustomAnimation();
-		void ClearFrame();
-		AZ::Crc32 ClearAllFrames();
-		void CopyFrame();
-		void PasteFrame();
-		void FillFrame();
-		void PlayAllCustomAnimation();
-		void ExportChromaEffect();
-		AZ::Crc32 ImportChromaEffect();
+		void ClearDeviceEffects();
 
+		void ShowRandomEffect();
+		void ShowFlashEffect();
+		void ShowWaveLR1Effect();
+		void ShowWaterFallEffect();
+		void ShowWaveCross1Effect();
+		void ShowBreathingEffect();
+		void ShowRippleLREffect();
+		void ShowRippleUDEffect();
+		void ShowExplosionEffect();
+		void ShowRainbowEffect();
     };
 }

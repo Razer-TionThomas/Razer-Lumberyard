@@ -33,10 +33,15 @@ function ChromaTrigger:OnActivate()
 	--self.tickBusHandler:Connect();
 	
 	ChromaRequestBus.Broadcast.ChromaSDKInit();
+ 	ChromaRequestBus.Broadcast.SetEffectColor(0.3, 0.3, 0.9, 1.0);
+	ChromaRequestBus.Broadcast.SetEffectSpeed(50);
+ 	ChromaRequestBus.Broadcast.PlayPresetChromaEffect(3, 0, false);
 end
 
 function ChromaTrigger:OnDeactivate() 
 	Debug.Log("Chroma script deactivated!");
+	ChromaRequestBus.Broadcast.StopChromaEffect();
+	ChromaRequestBus.Broadcast.ClearChromaEffects();
 	self.tickBusHandler:Disconnect()
 end
 
