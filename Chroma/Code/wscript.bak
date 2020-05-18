@@ -3,10 +3,7 @@
 def build(bld):
     bld.DefineGem(
         # Add custom build options here
-        includes    = [
-                        bld.Path('Code/CryEngine/CryAction'),
-                        bld.Path('Code/CryEngine/CryCommon'),
-                      ],
+        includes    = [bld.Path('Code/CryEngine/CryAction')],
 		win_lib = [ 'Ole32' ],
 		defines = [ '_AFXDLL' ],
 		editor      = dict(
@@ -15,8 +12,6 @@ def build(bld):
             use     = ['EditorCore'],
             includes = [
                 'Include',
-                bld.Path('Code/CryEngine/CryAction'),
-                bld.Path('Code/CryEngine/CryCommon'),
                 bld.Path('Code/Sandbox'),
                 bld.Path('Code/Sandbox/Editor'),
                 bld.Path('Code/Sandbox/Editor/Include'),
